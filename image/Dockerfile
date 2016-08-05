@@ -11,7 +11,7 @@ ENV HOME=/root \
 	DISPLAY_HEIGHT=800
 
 # Install dev toolkits
-RUN apk update && apk upgrade && apk add --update \
+RUN apt-get update && apt-get install -y \
 	fluxbox \
 	socat \
 	supervisor \
@@ -27,9 +27,6 @@ RUN git clone https://github.com/kanaka/noVNC.git /root/noVNC && \
 	ln -s /root/noVNC/vnc.html /root/noVNC/index.html
 
 RUN ln /dev/null /dev/raw1394
-
-# Clean APK cache
-RUN rm -rf /var/cache/apk/*
 
 # Configure xterm font size
 RUN echo -e 'xterm**font: 9x15\nurxvt*font: 9x15' > /etc/X11/Xresources
