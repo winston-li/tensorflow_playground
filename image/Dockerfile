@@ -10,8 +10,21 @@ ENV HOME=/root \
 	DISPLAY_WIDTH=1280 \
 	DISPLAY_HEIGHT=800
 
-# Install novnc
-RUN apt-get update && apt-get install -y novnc
+# Install dev toolkits
+RUN apk update && apk upgrade && apk add --update \
+	fluxbox \
+	socat \
+	supervisor \
+	x11vnc \
+	rxvt-unicode \
+	xvfb 
+
+# Clone noVNC from github
+RUN git clone https://github.com/kanaka/noVNC.git /root/noVNC && \
+	git clone https://github.com/kanaka/websockify /root/noVNC/utils/websockify && \
+	rm -rf /root/noVNC/.git && \
+	rm -rf /root/noVNC/utils/websockify/.git && \
+	ln -s /root/noVNC/vnc.html /root/noVNC/index.html
 
 
 # Configure xterm font size
