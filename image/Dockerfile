@@ -11,11 +11,11 @@ ENV HOME=/root \
 	DISPLAY_HEIGHT=800
 
 # Install novnc
-RUN apt-get update && apt-get install -y novnc \
+RUN apt-get update && apt-get install -y novnc
 
 
 # Configure xterm font size
-RUN echo -e 'xterm**font: 9x15\nurxvt*font: 9x15' > /etc/X11/Xresources
+RUN echo -e "xterm**font: 9x15\nurxvt*font: 9x15" > /etc/X11/Xresources
 
 # Add long-runing service config
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
