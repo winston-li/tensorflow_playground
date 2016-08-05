@@ -11,7 +11,7 @@ ENV HOME=/root \
 	DISPLAY_HEIGHT=800
 
 # Install dev toolkits
-RUN apk update && apk upgrade && apk add --update \
+RUN apt-get update && apt-get install -y \
 	fluxbox \
 	socat \
 	supervisor \
