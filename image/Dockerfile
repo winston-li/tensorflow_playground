@@ -10,6 +10,10 @@ ENV HOME=/root \
 	DISPLAY_WIDTH=1280 \
 	DISPLAY_HEIGHT=800
 
+# Fix Ubuntu can't set locale issue
+RUN locale-gen en_US.UTF-8 && \
+	dpkg-reconfigure locales
+
 # Install dev toolkits
 RUN apt-get update && apt-get install -y \
 	fluxbox \
@@ -18,7 +22,13 @@ RUN apt-get update && apt-get install -y \
 	x11vnc \
 	rxvt-unicode \
 	xvfb \
-	git
+	git \
+	tk-dev \
+	python-tk
+
+# Fix matplotlib backend TkAgg import error issue
+RUN pip uninstall -y matplotlib && \
+	pip --no-cache-dir install -U matplotlib
 
 # Clone noVNC from github
 RUN git clone https://github.com/kanaka/noVNC.git /root/noVNC && \

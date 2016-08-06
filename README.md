@@ -12,6 +12,9 @@
         docker run -v $PWD:/source -d -p 8080:8080 quay.io/draft/tensorflow-novnc
         open http://localhost:8080/vnc.html
 
+        // It might be easier to experiment with CLI and see the output figures on browser
+        docker exec -it <tensorflow-novnc container id> bash
+
 ### Appendix:
 #### 1. Python virutal environment 
     (1) install specific python version
