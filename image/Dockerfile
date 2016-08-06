@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y \
 	supervisor \
 	x11vnc \
 	rxvt-unicode \
-	xvfb 
+	xvfb \
+	git
 
 # Clone noVNC from github
 RUN git clone https://github.com/kanaka/noVNC.git /root/noVNC && \
@@ -28,7 +29,7 @@ RUN git clone https://github.com/kanaka/noVNC.git /root/noVNC && \
 
 
 # Configure xterm font size
-RUN echo -e "xterm**font: 9x15\nurxvt*font: 9x15" > /etc/X11/Xresources
+RUN echo -e "xterm**font: 9x15\nurxvt*font: 9x15" > /root/.Xresources
 
 # Add long-runing service config
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf

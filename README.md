@@ -61,11 +61,11 @@
     (1) download official tensor flow Docker image & launch it
         docker pull gcr.io/tensorflow/tensorflow
         <1> Jupyter notebook
-            docker run -it -p 8888:8888 --rm gcr.io/tensorflow/tensorflow
+            docker run -it -p 8888:8888 -v ${PWD}:/source --rm gcr.io/tensorflow/tensorflow
             // remember to add "%matplotlib inline" to show matplotlib figures
             
         <2> CLI
-            docker run -it -p 8888:8888 --rm --entrypoint bash gcr.io/tensorflow/tensorflow
+            docker run -it -p 8888:8888 -v ${PWD}:/source --rm --entrypoint bash gcr.io/tensorflow/tensorflow
             // can not show matplotlib figures
             
     (2) download custom Docker image with tensor flow & novnc
