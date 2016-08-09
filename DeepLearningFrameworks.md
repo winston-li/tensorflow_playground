@@ -2,12 +2,12 @@
 
 ### Description
 -----
-    It lists some metrics and reviews of deep learning framework(s), with key factors highlighted for adoption considerations.  
+It lists some metrics and reviews of deep learning framework(s), with key factors highlighted for adoption considerations.  
 
 
 ### Open Source Deep Learning Software Comparison (in alphabetical order)
 -----
-| Component | License | Written in   | Interface Languages | GPU | Multi-CPU | Multi-GPU | CNN | RNN | AD | Pre-trained Models | Commercial Support  | Specialties | GitHub Stars (2016/8) | Creator |
+| Software | License | Written in   | Interface Languages | GPU | Multi-CPU | Multi-GPU | CNN | RNN | AD | Pre-trained Models | Commercial Support  | Specialties | GitHub Stars (2016/8) | Creator |
 | ---           | ---    | ---         | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | Caffe         | BSD | C++ | Python, C++, MATLAB | O |   | O | O | O |   | O |   | Image Classification, Embedded Device Deployment | 11,760 | Berkeley Vision & Learning Center 
 | CNTK          | Free | C++ | CLI & its Network Definiton Language | O | O | O | O | O | O |   |   | RNN Training | 5,948 | Microsoft |
@@ -20,9 +20,9 @@
     [CNN]: Convolutional Neural Network
     [RNN]: Recurrent Neural Network 
     [AD]: Automatic Differentiation
-          AD let you train deep models without having to crank out the backpropagation algorithms for arbitrary architecture. It is important because you don’t want to hand-code a new variation of backpropagation every time you’re experimenting with a new arrangement of neural networks.
+          AD let you train deep models without having to crank out the backpropagation algorithms for arbitrary architecture. 
+          It is important because you don’t want to hand-code a new variation of backpropagation every time you’re experimenting with a new arrangement of neural networks.
     
-[Markdown table syntax](https://help.github.com/articles/organizing-information-with-tables/)
 
 ### Key Consideration Factors
     * Active Community
