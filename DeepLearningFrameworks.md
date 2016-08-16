@@ -18,7 +18,9 @@ It lists some metrics and reviews of deep learning framework(s), with key factor
 | Torch         | BSD | Lua | Lua, C | O |   | O | O | O | O | O |   |   | 5,125 | Ronan Collobert, et al. |
 
     [CNN]: Convolutional Neural Network
-    [RNN]: Recurrent Neural Network 
+           In normal neural networks, the architecture assumes inputs are independent. It doesn't take the spatial strucutre of inputs into consideration. Take image classification as an example, it treats input pixels which are far apart and close together on exactly the same footing. Convolutional Neural Network uses a special architecture to model local receptive fields, which turns out to be particularly well-adapted to classify images.
+    [RNN]: Recurrent Neural Network
+           In the feedforward neural networks, the input completely determines the activations of all the neurons through the remaining layers. Recurrent Neural Network introduces some dynamics into this static architecture. For instance, the behavior of hidden neurons might not just be determined by the activations in previous hidden layers, but also by their own activations at earlier times. Neural networks with this kind of time-varying behavious are RNN, and it's particularly useful in analyzing data that changes over time, such as speech or natual language processing.
     [AD]: Automatic Differentiation
           AD let you train deep models without having to crank out the backpropagation algorithms for arbitrary architecture. 
           It is important because you don’t want to hand-code a new variation of backpropagation every time you’re experimenting with a new arrangement of neural networks.
