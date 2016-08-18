@@ -107,3 +107,9 @@
     (2) download custom Docker image with tensor flow & novnc:
         // customize official docker image by adding novnc, to enable X11 GUI access via browser
         // refer to earlier "Setup the container with X11 GUI on browser" section
+
+#### 3. Debugging Python Code
+* VSCode is quite convenient for debugging Python code. For VSCode python code debugging in Python virtual environment, just launch VSCode in the command line under the activated python virtual environment. 
+
+		Winstonteki-MacBook-Air:notebook Winston$ pyenv activate tf-p35
+		(tf-p35) Winstonteki-MacBook-Air:notebook Winston$ code ~/GitHub/tensorflow_playground/notebook/
