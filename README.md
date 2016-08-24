@@ -55,10 +55,11 @@
         pyenv versions // list installed python versions
         pyenv virtualenvs // list created virtual environments
 
-    (3) install libraries/modules within virtual environment: 
+    (3) install libraries/modules within virtual environment:
+    	brew install freetype   // prerequisite of matplotlib
         pip install numpy matplotlib ipython jupyter
         export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.10.0rc0-py3-none-any.whl
-	    pip install --upgrade $TF_BINARY_URL
+        pip install --upgrade $TF_BINARY_URL
         
     (4) setup matplotlib backends on Mac:
         // get matplotlib configuration file place
