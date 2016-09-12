@@ -114,3 +114,12 @@
 
 		Winstonteki-MacBook-Air:notebook Winston$ pyenv activate tf-p35
 		(tf-p35) Winstonteki-MacBook-Air:notebook Winston$ code ~/GitHub/tensorflow_playground/notebook/
+
+#### 4. Python/Jupyter on Raspberry pi
+```
+$ sudo apt-get update
+$ sudo apt-get install python-pip python-dev python-opencv
+$ sudo pip install jupyter 
+```
+* Refer to http://jupyter-notebook.readthedocs.io/en/latest/public_server.html for setup jupyter notebook server, however, 
+it works via http, but seems not work via https (not able to connect to kernel)     
