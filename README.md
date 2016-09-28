@@ -1,6 +1,7 @@
 # Tensor Flow Playgrounds in Various Virtual Environments 
 [![Docker Repository on Quay](https://quay.io/repository/draft/tensorflow-novnc/status "Docker Repository on Quay")](https://quay.io/repository/draft/tensorflow-novnc) 
 [![Docker Repository on Quay](https://quay.io/repository/draft/tensorflow-ffmpeg/status "Docker Repository on Quay")](https://quay.io/repository/draft/tensorflow-ffmpeg)
+[![Docker Repository on Quay](https://quay.io/repository/draft/tensorflow-cross-compiler/status "Docker Repository on Quay")](https://quay.io/repository/draft/tensorflow-cross-compiler)
 
 ## Introduction: 
       Here are some lessons learned and working approaches after many trials-and-errors to build tensor flow experiment virtual environments on Mac OSX. The built playgrounds should be able to experiment with various input / output interactively. Many online articles and FAQs are actually not working correctly, at least on my MacBook. 
