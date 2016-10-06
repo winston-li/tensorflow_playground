@@ -6,11 +6,11 @@ import tensorflow as tf
 import os
 import time
 from tensorflow.examples.tutorials.mnist import input_data
-mnist_data = input_data.read_data_sets('MNIST_data', one_hot=True)
 
 BATCH_SIZE = 100
 
 def test(model_path, eval=False):
+    mnist_data = input_data.read_data_sets('MNIST_data', one_hot=True)
     data = mnist_data.test if not eval else mnist_data.validation
     with tf.Session() as sess:    
         ckpt = tf.train.get_checkpoint_state(model_path)

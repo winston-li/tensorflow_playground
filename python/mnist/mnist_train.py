@@ -13,10 +13,6 @@ from datetime import datetime
 import mnist_model
 
 from tensorflow.examples.tutorials.mnist import input_data
-mnist_data = input_data.read_data_sets('MNIST_data', one_hot=True)
-
-import matplotlib.pyplot as plt
-import pylab
 
 
 # Training Parameters
@@ -79,6 +75,7 @@ def train(model_path, log_path, epochs=TRAINING_EPOCHS):
     merged_summary_op = tf.merge_all_summaries()
     train_writer = tf.train.SummaryWriter(log_path + '/train', sess.graph)
     validation_writer = tf.train.SummaryWriter(log_path + '/validation', sess.graph)
+    mnist_data = input_data.read_data_sets('MNIST_data', one_hot=True)
     # Training cycle
     for epoch in tqdm(range(TRAINING_EPOCHS), ascii=True): 
         epoch_avg_cost = 0.
