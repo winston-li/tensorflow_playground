@@ -1,8 +1,9 @@
 FROM sdthirlwall/raspberry-pi-cross-compiler
 
 # Install some native build-time tools
+RUN apt-get update 
 # For Protobuf
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf automake libtool maven unzip
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf automake libtool maven unzip
 # For Bazel
 RUN echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
     echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
