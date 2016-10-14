@@ -84,8 +84,8 @@ def _save_graph_def(ckpt_dir, as_text=False):
                             'draft_model.pb'), ckpt.model_checkpoint_path
 
 
-def finalize_model(model_path):
-    graph_path, ckpt_path = _save_graph_def(model_path, as_text=True)
+def finalize_model(model_dir):
+    graph_path, ckpt_path = _save_graph_def(model_dir, as_text=True)
     print('Merge GraphDef and Variables from \n %s \n %s' %
           (graph_path, ckpt_path))
     # Load the GraphDef and Freeze it with trained variables altogether
@@ -96,7 +96,7 @@ def finalize_model(model_path):
     output_node_names = "Model/pred"
     restore_op_name = "save/restore_all"
     filename_tensor_name = "save/Const:0"
-    output_graph_path = os.path.join(model_path, 'model.pb')
+    output_graph_path = os.path.join(model_dir, 'model.pb')
     clear_devices = False
     _freeze_graph(input_graph_path, input_saver_def_path, input_binary,
                   input_checkpoint_path, output_node_names, restore_op_name,
@@ -105,8 +105,8 @@ def finalize_model(model_path):
 
 
 def run():
-    model_path = os.path.join(os.getcwd(), 'models')
-    finalize_model(model_path)
+    model_dir = os.path.join(os.getcwd(), 'models')
+    finalize_model(model_dir)
 
 
 if __name__ == '__main__':

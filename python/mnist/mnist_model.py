@@ -6,11 +6,13 @@ import tensorflow as tf
 import numpy as np
 import math
 
+import mnist_input
+
 # Network Parameters
-NUM_INPUT_XS = 28
-NUM_INPUT_YS = 28
-NUM_INPUT_FEATURES = NUM_INPUT_XS * NUM_INPUT_YS  # MNIST data input (img shape: 28*28)
-NUM_OUTPUT = 10  # MNIST total classes (0-9 digits)
+NUM_INPUT_XS = mnist_input.IMAGE_SIZE
+NUM_INPUT_YS = mnist_input.IMAGE_SIZE
+NUM_INPUT_FEATURES = mnist_input.IMAGE_PIXELS
+NUM_OUTPUT = mnist_input.NUM_CLASSES
 NUM_FC_1 = 100  # 1st fully-connected layer number of features
 PATCH_SZ = 5  # convolution patch size 5x5
 NUM_CONV_1 = 20  # convolution layer1 output channels
@@ -131,16 +133,18 @@ def inference(input_tensor, dropout_keep_rate):
         return pred, logits
 
 
-    # TF Graph Input, Output and Dropout placeholders
-def get_placeholders():
-    x = tf.placeholder(
-        tf.float32, [None, NUM_INPUT_XS * NUM_INPUT_YS], name='input_data')
-    y_ = tf.placeholder(tf.float32, [None, NUM_OUTPUT], name='label_data')
-    keep_rate = tf.placeholder(tf.float32, name='dropout_keep_rate')
-    return x, y_, keep_rate
+# TF Model Graph placeholders
+def placeholders():
+    with tf.name_scope('Input'):
+        images_ph = tf.placeholder(
+            tf.float32, [None, NUM_INPUT_XS * NUM_INPUT_YS], name='images')
+        labels_ph = tf.placeholder(
+            tf.float32, [None, NUM_OUTPUT], name='labels')
+        keep_rate_ph = tf.placeholder(tf.float32, name='dropout_keep_rate')
+        return images_ph, labels_ph, keep_rate_ph
 
 
-def get_accuracy(predictions, labels):
+def accuracy(predictions, labels):
     with tf.name_scope('Accuracy'):
         accuracy = tf.equal(tf.argmax(predictions, 1), tf.argmax(labels, 1))
         accuracy = tf.reduce_mean(
@@ -149,7 +153,7 @@ def get_accuracy(predictions, labels):
         return accuracy
 
 
-def get_loss(logits, labels):
+def loss(logits, labels):
     with tf.name_scope('Loss'):
         loss = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(logits, labels),
@@ -161,5 +165,6 @@ def get_loss(logits, labels):
 def training(loss, learning_rate, global_step):
     with tf.name_scope('Optimizer'):
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        train_op = optimizer.minimize(loss, name='train_op')
+        train_op = optimizer.minimize(
+            loss, global_step=global_step, name='train_op')
         return train_op

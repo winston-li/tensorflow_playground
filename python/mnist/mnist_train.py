@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from builtins import input
+from builtins import range
 
 import tensorflow as tf
 import numpy as np
@@ -11,135 +13,136 @@ import pickle
 from datetime import datetime
 
 import mnist_model
-from tensorflow.examples.tutorials.mnist import input_data
+import mnist_input
 
 # Training Parameters
 LEARNING_RATE = 0.01
-TRAINING_EPOCHS = 2
 BATCH_SIZE = 10
 DISPLAY_STEP = 10
-LOG_STEP = 100
-CKPT_STEP = 1000
+LOG_STEP = 10
+CKPT_STEP = 100
+MAX_TRAINING_STEPS = 5500 * 2
 
 
-def _is_resume_training(model_path):
-    ckpt = tf.train.get_checkpoint_state(model_path)
+def _get_checkpoint(model_dir):
+    ckpt = tf.train.get_checkpoint_state(model_dir)
     if ckpt and ckpt.model_checkpoint_path:
-        return True
+        return ckpt.model_checkpoint_path
     else:
-        return False
+        return None
 
 
-def train(model_path, log_path, train_data, val_data, epochs=TRAINING_EPOCHS):
-    if not _is_resume_training(model_path):
-        print("Grand New training")
-        global_step = 0
-        x, y_, keep_rate = mnist_model.get_placeholders()
-        pred, logits = mnist_model.inference(x, keep_rate)
-        loss = mnist_model.get_loss(logits, y_)
+def train(data_dir,
+          model_dir,
+          log_dir,
+          batch_size=BATCH_SIZE,
+          max_batches=MAX_TRAINING_STEPS):
+    with tf.Graph().as_default():
+        global_step = tf.Variable(0, trainable=False)
+
+        images_ph, labels_ph, keep_rate_ph = mnist_model.placeholders()
+        pred, logits = mnist_model.inference(images_ph, keep_rate_ph)
+        loss = mnist_model.loss(logits, labels_ph)
         train_op = mnist_model.training(loss, LEARNING_RATE, global_step)
-        accuracy = mnist_model.get_accuracy(pred, y_)
-        saver = tf.train.Saver(tf.all_variables())
+        accuracy = mnist_model.accuracy(pred, labels_ph)
+        images, labels = mnist_input.input_pipeline(
+            data_dir, batch_size, mnist_input.DataTypes.train)
+        val_images, val_labels = mnist_input.input_pipeline(
+            data_dir, batch_size, mnist_input.DataTypes.validation)
+        merged_summary_op = tf.merge_all_summaries()
+
+        saver = tf.train.Saver()
         sess = tf.Session()
-        sess.run(tf.initialize_all_variables())
-        train_cost_history, validation_cost_history, validation_accuracy_history = (
-            [] for i in range(3))
-    else:
-        sess = tf.Session()
-        ckpt = tf.train.get_checkpoint_state(model_path)
-        if ckpt and ckpt.model_checkpoint_path:
-            print("Resume training after ", ckpt.model_checkpoint_path)
-            saver = tf.train.import_meta_graph(ckpt.model_checkpoint_path +
-                                               '.meta')
-            saver.restore(sess, ckpt.model_checkpoint_path)
-            # extract the last part of model_checkpoint_path as global_step
-            global_step = int(
-                ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1])
-            x = sess.graph.get_tensor_by_name('input_data:0')
-            y_ = sess.graph.get_tensor_by_name('label_data:0')
-            keep_rate = sess.graph.get_tensor_by_name('dropout_keep_rate:0')
-            accuracy = sess.graph.get_tensor_by_name('Accuracy/accuracy:0')
-            loss = sess.graph.get_tensor_by_name('Loss/loss:0')
-            train_op = sess.graph.get_operation_by_name('Optimizer/train_op')
-            pickle_name = 'history.pickle-' + str(global_step)
-            history_path = os.path.join(model_path, pickle_name)
-            print(history_path)
-            with open(history_path, "rb") as f:
-                train_cost_history, validation_cost_history, validation_accuracy_history = pickle.load(
-                    f)
+        ckpt = _get_checkpoint(model_dir)
+        if not ckpt:
+            print("Grand New training")
+            init_op = tf.initialize_all_variables()
+            sess.run(init_op)
         else:
-            print('Something wrong with specified model path!')
-            return
+            print("Resume training after %s" % ckpt)
+            saver.restore(sess, ckpt)
 
-    print("global_step = ", global_step)
-    merged_summary_op = tf.merge_all_summaries()
-    train_writer = tf.train.SummaryWriter(log_path + '/train', sess.graph)
-    validation_writer = tf.train.SummaryWriter(log_path + '/validation',
-                                               sess.graph)
+        coord = tf.train.Coordinator()
+        # Start the queue runner, QueueRunner created in mnist_input.py
+        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-    # Training cycle
-    for epoch in tqdm(range(TRAINING_EPOCHS), ascii=True):
-        epoch_avg_cost = 0.
-        total_batch = int(train_data.num_examples / BATCH_SIZE)
-        for i in range(total_batch):
-            batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
-            start_time = time.time()
-            _, train_cost = sess.run([train_op, loss],
-                                     feed_dict={x: batch_xs,
-                                                y_: batch_ys,
-                                                keep_rate: 0.5})
-            duration = time.time() - start_time
-            epoch_avg_cost += train_cost / total_batch
-            if i % DISPLAY_STEP == 0:
-                examples_per_sec = BATCH_SIZE / duration
-                sec_per_batch = float(duration)
-                print(
-                    '%s: step %d, train_loss = %.5f (%.1f examples/sec; %.3f sec/batch)'
-                    % (datetime.now(), i, train_cost, examples_per_sec,
-                       sec_per_batch))
+        train_writer = tf.train.SummaryWriter(log_dir + '/train', sess.graph)
+        validation_writer = tf.train.SummaryWriter(log_dir + '/validation',
+                                                   sess.graph)
 
-            cur_step = epoch * total_batch + i + 1
-            if i % LOG_STEP == 0:
-                summary_str = sess.run(merged_summary_op,
-                                       feed_dict={x: batch_xs,
-                                                  y_: batch_ys,
-                                                  keep_rate: 0.5})
-                train_writer.add_summary(summary_str, global_step + cur_step)
-                train_cost_history.append(train_cost)
-                summary_str, val_cost, val_accuracy = sess.run(
-                    [merged_summary_op, loss, accuracy],
-                    feed_dict={x: val_data.images,
-                               y_: val_data.labels,
-                               keep_rate: 1.0})
-                validation_writer.add_summary(summary_str,
-                                              global_step + cur_step)
-                validation_cost_history.append(val_cost)
-                validation_accuracy_history.append(val_accuracy)
+        acc_step = sess.run(global_step)
+        print('accumulated step = %d' % acc_step)
+        # Training cycle
+        try:
+            for step in range(1, MAX_TRAINING_STEPS + 1):
+                if coord.should_stop():
+                    break
 
-            if (i + 1) % CKPT_STEP == 0 or (i + 1) == total_batch:
-                ckpt_path = os.path.join(model_path, 'model.ckpt')
-                saver.save(sess, ckpt_path, global_step=global_step + cur_step)
-                pickle_name = 'history.pickle-' + str(global_step + cur_step)
-                history_path = os.path.join(model_path, pickle_name)
-                with open(history_path, "wb") as f:
-                    pickle.dump((train_cost_history, validation_cost_history,
-                                 validation_accuracy_history), f)
-        # Display average training cost per epoch
-        print("Epoch: %d, avg cost= %.9f" % (epoch + 1, epoch_avg_cost))
+                images_r, labels_r = sess.run([images, labels])
+                val_images_r, val_labels_r = sess.run([val_images, val_labels])
 
-    train_writer.close()
-    validation_writer.close()
-    print("Training Finished!")
-    sess.close()
+                train_feed = {
+                    images_ph: images_r,
+                    labels_ph: labels_r,
+                    keep_rate_ph: 0.5
+                }
+                val_feed = {
+                    images_ph: val_images_r,
+                    labels_ph: val_labels_r,
+                    keep_rate_ph: 1.0
+                }
+
+                start_time = time.time()
+                _, train_cost = sess.run([train_op, loss],
+                                         feed_dict=train_feed)
+                duration = time.time() - start_time
+
+                assert not np.isnan(
+                    train_cost), 'Model diverged with loss = NaN'
+
+                if step % DISPLAY_STEP == 0:
+                    examples_per_sec = BATCH_SIZE / duration
+                    sec_per_batch = float(duration)
+                    print(
+                        '%s: step %d, train_loss = %.6f (%.1f examples/sec; %.3f sec/batch)'
+                        % (datetime.now(), step, train_cost, examples_per_sec,
+                           sec_per_batch))
+
+                if step % LOG_STEP == 0:
+                    summary_str = sess.run(merged_summary_op,
+                                           feed_dict=train_feed)
+                    train_writer.add_summary(summary_str, acc_step + step)
+                    summary_str, val_cost, val_accuracy = sess.run(
+                        [merged_summary_op, loss, accuracy],
+                        feed_dict=val_feed)
+                    validation_writer.add_summary(summary_str, acc_step + step)
+
+                if step % CKPT_STEP == 0 or step == MAX_TRAINING_STEPS:
+                    ckpt_path = os.path.join(model_dir, 'model.ckpt')
+                    saver.save(sess, ckpt_path, global_step)
+
+        except tf.errors.OutOfRangeError:
+            print('Done training for %d epochs' % (num_epochs))
+
+        finally:
+            # When done, ask the threads to stop
+            coord.request_stop()
+
+        coord.join(threads)
+        train_writer.close()
+        validation_writer.close()
+        sess.close()
 
 
 def run():
-    model_path = os.path.join(os.getcwd(), 'models')
-    log_path = os.path.join(os.getcwd(), 'logs')
-    tf.gfile.MakeDirs(model_path)
-    tf.gfile.MakeDirs(log_path)
-    mnist_data = input_data.read_data_sets('MNIST_data', one_hot=True)
-    train(model_path, log_path, mnist_data.train, mnist_data.validation)
+    data_dir = os.path.join(os.getcwd(), 'MNIST_data')
+    model_dir = os.path.join(os.getcwd(), 'models')
+    log_dir = os.path.join(os.getcwd(), 'logs')
+    tf.gfile.MakeDirs(model_dir)
+    tf.gfile.MakeDirs(log_dir)
+
+    mnist_input.maybe_download_and_convert(data_dir)
+    train(data_dir, model_dir, log_dir, BATCH_SIZE, MAX_TRAINING_STEPS)
 
 
 if __name__ == '__main__':

@@ -49,8 +49,8 @@ def plot2(train_costs, val_costs, val_accs):
 
 
 def run():
-    model_path = os.path.join(os.getcwd(), 'models')
-    ckpt = tf.train.get_checkpoint_state(model_path)
+    model_dir = os.path.join(os.getcwd(), 'models')
+    ckpt = tf.train.get_checkpoint_state(model_dir)
     if ckpt and ckpt.model_checkpoint_path:
         latest_num = int(
             ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1])
@@ -59,7 +59,7 @@ def run():
         return
 
     pickle_name = 'history.pickle-' + str(latest_num)
-    history_path = os.path.join(model_path, pickle_name)
+    history_path = os.path.join(model_dir, pickle_name)
     print(history_path)
     with open(history_path, "rb") as f:
         train_cost_history, validation_cost_history, validation_accuracy_history = pickle.load(

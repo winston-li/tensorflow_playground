@@ -13,9 +13,9 @@ could be deployed to embedded devices for run-time prediction.
     ```
     $ nohup python mnist_train.py &
     ```
-    (2) Validation:
+    (2) Evaluation:
     ```    
-    $ python mnist_test.py
+    $ python mnist_eval.py
         
       Validation accuracy:
       Restore from  /home/Winston/python/mnist/models/model.ckpt-11000
