@@ -16,13 +16,13 @@ import mnist_model
 import mnist_input
 
 # Training Parameters
+VALIDATION_BATCH_SIZE = mnist_input.VALIDATION_DATA_SIZE
 LEARNING_RATE = 0.01
 BATCH_SIZE = 10
 DISPLAY_STEP = 10
 LOG_STEP = 10
 CKPT_STEP = 100
 MAX_TRAINING_STEPS = 5500 * 2
-
 
 def _get_checkpoint(model_dir):
     ckpt = tf.train.get_checkpoint_state(model_dir)
@@ -48,7 +48,7 @@ def train(data_dir,
         images, labels = mnist_input.input_pipeline(
             data_dir, batch_size, mnist_input.DataTypes.train)
         val_images, val_labels = mnist_input.input_pipeline(
-            data_dir, batch_size, mnist_input.DataTypes.validation)
+            data_dir, VALIDATION_BATCH_SIZE, mnist_input.DataTypes.validation)
         merged_summary_op = tf.merge_all_summaries()
 
         saver = tf.train.Saver()
