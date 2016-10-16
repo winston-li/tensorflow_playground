@@ -159,12 +159,33 @@ def loss(logits, labels):
             tf.nn.softmax_cross_entropy_with_logits(logits, labels),
             name='loss')
         tf.scalar_summary('loss', loss)
+        #tf.add_to_collection('losses', loss)
         return loss
 
 
-def training(loss, learning_rate, global_step):
+def avg_loss():
+    with tf.name_scope('Loss'):
+        avg_loss_ph = tf.placeholder(tf.float32, name='avg_loss')
+        avg_loss_op = tf.scalar_summary('avg_loss', avg_loss_ph)
+        #tf.add_to_collection('avg_loss', avg_loss)
+        return avg_loss_op, avg_loss_ph
+
+
+def _add_loss_summaries(total_loss):
+    with tf.name_scope('Loss'):
+        # compute the exponential moving average of all average losses
+        ema_loss = tf.train.ExponentialMovingAverage(0.9, name='ema')
+        ema_loss_op = ema_loss.apply([total_loss])
+        tf.scalar_summary('ema_loss', ema_loss.average(total_loss))
+        return ema_loss_op
+
+
+def training(total_loss, learning_rate, global_step):
+    # Generate moving averages of loss and associated summaries.
+    ema_loss_op = _add_loss_summaries(total_loss)
     with tf.name_scope('Optimizer'):
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        train_op = optimizer.minimize(
-            loss, global_step=global_step, name='train_op')
-        return train_op
+        with tf.control_dependencies([ema_loss_op]):
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+            train_op = optimizer.minimize(
+                total_loss, global_step=global_step, name='train_op')
+            return train_op

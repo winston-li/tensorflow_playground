@@ -24,6 +24,7 @@ LOG_STEP = 10
 CKPT_STEP = 100
 MAX_TRAINING_STEPS = 5500 * 2
 
+
 def _get_checkpoint(model_dir):
     ckpt = tf.train.get_checkpoint_state(model_dir)
     if ckpt and ckpt.model_checkpoint_path:
@@ -43,6 +44,7 @@ def train(data_dir,
         images_ph, labels_ph, keep_rate_ph = mnist_model.placeholders()
         pred, logits = mnist_model.inference(images_ph, keep_rate_ph)
         loss = mnist_model.loss(logits, labels_ph)
+        avg_loss_op, avg_loss_ph = mnist_model.avg_loss()
         train_op = mnist_model.training(loss, LEARNING_RATE, global_step)
         accuracy = mnist_model.accuracy(pred, labels_ph)
         images, labels = mnist_input.input_pipeline(
@@ -74,6 +76,7 @@ def train(data_dir,
         print('accumulated step = %d' % acc_step)
         # Training cycle
         try:
+            lst = []
             for step in range(1, MAX_TRAINING_STEPS + 1):
                 if coord.should_stop():
                     break
@@ -93,28 +96,36 @@ def train(data_dir,
                 }
 
                 start_time = time.time()
-                _, train_cost = sess.run([train_op, loss],
+                _, train_loss = sess.run([train_op, loss],
                                          feed_dict=train_feed)
                 duration = time.time() - start_time
+                lst.append(train_loss)
 
                 assert not np.isnan(
-                    train_cost), 'Model diverged with loss = NaN'
+                    train_loss), 'Model diverged with loss = NaN'
 
                 if step % DISPLAY_STEP == 0:
                     examples_per_sec = BATCH_SIZE / duration
                     sec_per_batch = float(duration)
                     print(
                         '%s: step %d, train_loss = %.6f (%.1f examples/sec; %.3f sec/batch)'
-                        % (datetime.now(), step, train_cost, examples_per_sec,
+                        % (datetime.now(), step, train_loss, examples_per_sec,
                            sec_per_batch))
 
                 if step % LOG_STEP == 0:
-                    summary_str = sess.run(merged_summary_op,
-                                           feed_dict=train_feed)
+                    avg_np = np.mean(lst)
+                    del lst[:]
+
+                    train_feed.update({avg_loss_ph: avg_np})
+                    summary_str, _ = sess.run(
+                        [merged_summary_op, avg_loss_op], feed_dict=train_feed)
                     train_writer.add_summary(summary_str, acc_step + step)
-                    summary_str, val_cost, val_accuracy = sess.run(
-                        [merged_summary_op, loss, accuracy],
-                        feed_dict=val_feed)
+
+                    val_loss, val_accuracy = sess.run([loss, accuracy],
+                                                      feed_dict=val_feed)
+                    val_feed.update({avg_loss_ph: val_loss})
+                    summary_str, _ = sess.run(
+                        [merged_summary_op, avg_loss_op], feed_dict=val_feed)
                     validation_writer.add_summary(summary_str, acc_step + step)
 
                 if step % CKPT_STEP == 0 or step == MAX_TRAINING_STEPS:
