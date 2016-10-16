@@ -20,8 +20,8 @@ VALIDATION_BATCH_SIZE = mnist_input.VALIDATION_DATA_SIZE
 LEARNING_RATE = 0.01
 BATCH_SIZE = 10
 DISPLAY_STEP = 10
-LOG_STEP = 10
-CKPT_STEP = 100
+LOG_STEP = 100
+CKPT_STEP = 1000
 MAX_TRAINING_STEPS = 5500 * 2
 
 
@@ -44,13 +44,14 @@ def train(data_dir,
         images_ph, labels_ph, keep_rate_ph = mnist_model.placeholders()
         pred, logits = mnist_model.inference(images_ph, keep_rate_ph)
         loss = mnist_model.loss(logits, labels_ph)
-        avg_loss_op, avg_loss_ph = mnist_model.avg_loss()
+        avg_loss = mnist_model.avg_loss()
         train_op = mnist_model.training(loss, LEARNING_RATE, global_step)
         accuracy = mnist_model.accuracy(pred, labels_ph)
         images, labels = mnist_input.input_pipeline(
             data_dir, batch_size, mnist_input.DataTypes.train)
         val_images, val_labels = mnist_input.input_pipeline(
             data_dir, VALIDATION_BATCH_SIZE, mnist_input.DataTypes.validation)
+
         merged_summary_op = tf.merge_all_summaries()
 
         saver = tf.train.Saver()
@@ -74,6 +75,7 @@ def train(data_dir,
 
         acc_step = sess.run(global_step)
         print('accumulated step = %d' % acc_step)
+        print('prevous avg_loss = %.3f' % sess.run(avg_loss))
         # Training cycle
         try:
             lst = []
@@ -113,19 +115,17 @@ def train(data_dir,
                            sec_per_batch))
 
                 if step % LOG_STEP == 0:
-                    avg_np = np.mean(lst)
+                    avg = np.mean(lst)
                     del lst[:]
-
-                    train_feed.update({avg_loss_ph: avg_np})
-                    summary_str, _ = sess.run(
-                        [merged_summary_op, avg_loss_op], feed_dict=train_feed)
+                    #print('avg loss = %.3f' % avg)
+                    sess.run(avg_loss.assign(avg))
+                    summary_str = sess.run(merged_summary_op,
+                                           feed_dict=train_feed)
                     train_writer.add_summary(summary_str, acc_step + step)
 
-                    val_loss, val_accuracy = sess.run([loss, accuracy],
-                                                      feed_dict=val_feed)
-                    val_feed.update({avg_loss_ph: val_loss})
-                    summary_str, _ = sess.run(
-                        [merged_summary_op, avg_loss_op], feed_dict=val_feed)
+                    summary_str, val_loss, val_accuracy = sess.run(
+                        [merged_summary_op, loss, accuracy],
+                        feed_dict=val_feed)
                     validation_writer.add_summary(summary_str, acc_step + step)
 
                 if step % CKPT_STEP == 0 or step == MAX_TRAINING_STEPS:

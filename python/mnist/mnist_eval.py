@@ -8,10 +8,9 @@ import time
 import mnist_input
 
 BATCH_SIZE = 100
-MAX_STEPS = 100
 
 
-def evaluate(model_dir, data_dir, dataset_type):
+def evaluate(model_dir, data_dir, dataset_type, max_steps):
     with tf.Session() as sess:
         ckpt = tf.train.get_checkpoint_state(model_dir)
         if ckpt and ckpt.model_checkpoint_path:
@@ -40,7 +39,7 @@ def evaluate(model_dir, data_dir, dataset_type):
         acc = 0.0
         try:
             step = 0
-            while step < MAX_STEPS and not coord.should_stop():
+            while step < max_steps and not coord.should_stop():
                 images_r, labels_r = sess.run([images, labels])
                 data_feed = {
                     images_ph: images_r,
@@ -71,9 +70,11 @@ def run():
     data_dir = os.path.join(os.getcwd(), 'MNIST_data')
     model_dir = os.path.join(os.getcwd(), 'models')
     print('Validation accuracy:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.validation)
+    evaluate(model_dir, data_dir, mnist_input.DataTypes.validation, 5000)
     print('Test accurary:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.test)
+    evaluate(model_dir, data_dir, mnist_input.DataTypes.test, 10000)
+    print('Train accurary:')
+    evaluate(model_dir, data_dir, mnist_input.DataTypes.train, 55000)
 
 
 if __name__ == '__main__':
