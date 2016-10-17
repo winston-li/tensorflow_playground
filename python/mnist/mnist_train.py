@@ -46,7 +46,7 @@ def train(data_dir,
         loss = mnist_model.loss(logits, labels_ph)
         avg_loss = mnist_model.avg_loss()
         train_op = mnist_model.training(loss, LEARNING_RATE, global_step)
-        accuracy = mnist_model.accuracy(pred, labels_ph)
+        accuracy = mnist_model.evaluation(pred, labels_ph)
         images, labels = mnist_input.input_pipeline(
             data_dir, batch_size, mnist_input.DataTypes.train)
         val_images, val_labels = mnist_input.input_pipeline(

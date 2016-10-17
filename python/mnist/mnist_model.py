@@ -144,57 +144,49 @@ def placeholders():
         return images_ph, labels_ph, keep_rate_ph
 
 
-def accuracy(predictions, labels):
-    with tf.name_scope('Accuracy'):
+def evaluation(predictions, labels):
+    with tf.name_scope('Evaluation'):
         accuracy = tf.equal(tf.argmax(predictions, 1), tf.argmax(labels, 1))
         accuracy = tf.reduce_mean(
             tf.cast(accuracy, tf.float32), name='accuracy')
-        tf.scalar_summary('accuracy', accuracy)
+        tf.scalar_summary('Evaluation/accuracy', accuracy)
+        error = 1.0 - accuracy
+        tf.scalar_summary('Evaluation/error', error)
         return accuracy
 
 
 def loss(logits, labels):
     with tf.name_scope('Loss'):
-        loss = tf.reduce_mean(
+        cross_entropy_mean = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(logits, labels),
-            name='loss')
-        tf.scalar_summary('loss', loss)
-        #tf.add_to_collection('losses', loss)
-        return loss
+            name='cross_entropy')
+        #tf.scalar_summary('loss', loss) # use avg_loss & ema_loss instead of just the most recent mini-batch only
+        tf.add_to_collection('losses', cross_entropy_mean)
+        return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
 
 def avg_loss():
     with tf.name_scope('Loss'):
         avg_loss = tf.Variable(0.0, trainable=False, name='avg_loss')
-        tf.scalar_summary('avg_loss', avg_loss)
-        tf.add_to_collection('avg_loss', avg_loss)
+        tf.scalar_summary('Loss/total_loss (avg)', avg_loss)
         return avg_loss
 
 
-def _add_loss_summaries():
-    with tf.name_scope('Loss'):
-        avg_loss = tf.get_collection('avg_loss')
-        # compute the exponential moving average of all average losses
-        ema_loss = tf.train.ExponentialMovingAverage(0.9, name='ema')
-        ema_loss_op = ema_loss.apply([avg_loss[0]])
-        tf.scalar_summary('ema_loss', ema_loss.average(avg_loss[0]))
-        return ema_loss_op
-
-
-'''
 def _add_loss_summaries(total_loss):
     with tf.name_scope('Loss'):
         # compute the exponential moving average of all average losses
-        ema_loss = tf.train.ExponentialMovingAverage(0.9, name='ema')
-        ema_loss_op = ema_loss.apply([total_loss])
-        tf.scalar_summary('ema_loss', ema_loss.average(total_loss))
+        ema_loss = tf.train.ExponentialMovingAverage(0.9, name='ema_loss')
+        losses = tf.get_collection('losses')
+        ema_loss_op = ema_loss.apply(losses + [total_loss])
+        for l in losses + [total_loss]:
+            tf.scalar_summary(l.op.name + ' (raw)', l)
+            tf.scalar_summary(l.op.name + ' (ema)', ema_loss.average(l))
         return ema_loss_op
-'''
 
 
 def training(total_loss, learning_rate, global_step):
     # Generate moving averages of loss and associated summaries.
-    ema_loss_op = _add_loss_summaries()
+    ema_loss_op = _add_loss_summaries(total_loss)
     with tf.name_scope('Optimizer'):
         with tf.control_dependencies([ema_loss_op]):
             optimizer = tf.train.GradientDescentOptimizer(learning_rate)

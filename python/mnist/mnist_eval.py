@@ -26,7 +26,7 @@ def evaluate(model_dir, data_dir, dataset_type, max_steps):
         labels_ph = sess.graph.get_tensor_by_name('Input/labels:0')
         keep_rate_ph = sess.graph.get_tensor_by_name(
             'Input/dropout_keep_rate:0')
-        accuracy = sess.graph.get_tensor_by_name('Accuracy/accuracy:0')
+        accuracy = sess.graph.get_tensor_by_name('Evaluation/accuracy:0')
 
         images, labels = mnist_input.input_pipeline(
             data_dir, BATCH_SIZE, type=dataset_type)
@@ -70,11 +70,11 @@ def run():
     data_dir = os.path.join(os.getcwd(), 'MNIST_data')
     model_dir = os.path.join(os.getcwd(), 'models')
     print('Validation accuracy:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.validation, 5000)
+    evaluate(model_dir, data_dir, mnist_input.DataTypes.validation, 5000 / BATCH_SIZE)
     print('Test accurary:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.test, 10000)
+    evaluate(model_dir, data_dir, mnist_input.DataTypes.test, 10000 / BATCH_SIZE)
     print('Train accurary:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.train, 55000)
+    evaluate(model_dir, data_dir, mnist_input.DataTypes.train, 55000 / BATCH_SIZE)
 
 
 if __name__ == '__main__':
