@@ -52,4 +52,9 @@ could be deployed to embedded devices for run-time prediction.
      Round 2: labels   = [9 6 6 5 4 0 7 4 0 1]  
     ```
 
+### Notes
+- Placeholders are used for images, labels, and keep_rate (dropout layer), so that
+  it's easier to control the data feed/flow.
+- Average loss and Expoential Moving Average loss across mini-batches are recorded instead of just the most
+  recent mini-batch's loss.
 

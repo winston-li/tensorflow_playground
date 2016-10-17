@@ -39,7 +39,7 @@ def train(data_dir,
           batch_size=BATCH_SIZE,
           max_batches=MAX_TRAINING_STEPS):
     with tf.Graph().as_default():
-        global_step = tf.Variable(0, trainable=False)
+        global_step = tf.Variable(0, trainable=False, name='global_step')
 
         images_ph, labels_ph, keep_rate_ph = mnist_model.placeholders()
         pred, logits = mnist_model.inference(images_ph, keep_rate_ph)
@@ -49,8 +49,6 @@ def train(data_dir,
         accuracy = mnist_model.evaluation(pred, labels_ph)
         images, labels = mnist_input.input_pipeline(
             data_dir, batch_size, mnist_input.DataTypes.train)
-        val_images, val_labels = mnist_input.input_pipeline(
-            data_dir, VALIDATION_BATCH_SIZE, mnist_input.DataTypes.validation)
 
         merged_summary_op = tf.merge_all_summaries()
 
@@ -70,8 +68,6 @@ def train(data_dir,
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
         train_writer = tf.train.SummaryWriter(log_dir + '/train', sess.graph)
-        validation_writer = tf.train.SummaryWriter(log_dir + '/validation',
-                                                   sess.graph)
 
         acc_step = sess.run(global_step)
         print('accumulated step = %d' % acc_step)
@@ -84,17 +80,11 @@ def train(data_dir,
                     break
 
                 images_r, labels_r = sess.run([images, labels])
-                val_images_r, val_labels_r = sess.run([val_images, val_labels])
 
                 train_feed = {
                     images_ph: images_r,
                     labels_ph: labels_r,
                     keep_rate_ph: 0.5
-                }
-                val_feed = {
-                    images_ph: val_images_r,
-                    labels_ph: val_labels_r,
-                    keep_rate_ph: 1.0
                 }
 
                 start_time = time.time()
@@ -123,11 +113,6 @@ def train(data_dir,
                                            feed_dict=train_feed)
                     train_writer.add_summary(summary_str, acc_step + step)
 
-                    summary_str, val_loss, val_accuracy = sess.run(
-                        [merged_summary_op, loss, accuracy],
-                        feed_dict=val_feed)
-                    validation_writer.add_summary(summary_str, acc_step + step)
-
                 if step % CKPT_STEP == 0 or step == MAX_TRAINING_STEPS:
                     ckpt_path = os.path.join(model_dir, 'model.ckpt')
                     saver.save(sess, ckpt_path, global_step)
@@ -141,7 +126,6 @@ def train(data_dir,
 
         coord.join(threads)
         train_writer.close()
-        validation_writer.close()
         sess.close()
 
 

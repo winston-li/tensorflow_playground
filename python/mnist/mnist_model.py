@@ -192,4 +192,6 @@ def training(total_loss, learning_rate, global_step):
             optimizer = tf.train.GradientDescentOptimizer(learning_rate)
             train_op = optimizer.minimize(
                 total_loss, global_step=global_step, name='train_op')
+
+            # TODO: Track the moving averages of all trainable variables.    
             return train_op

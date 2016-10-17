@@ -6,12 +6,16 @@ import tensorflow as tf
 import os
 import time
 import mnist_input
+import numpy as np
 
 BATCH_SIZE = 100
 
+dataset_map = [' (train)', ' (validataion)', ' (test)']
 
-def evaluate(model_dir, data_dir, dataset_type, max_steps):
+
+def evaluate(model_dir, data_dir, log_dir, dataset_type, max_steps):
     with tf.Session() as sess:
+        # Restore Graph
         ckpt = tf.train.get_checkpoint_state(model_dir)
         if ckpt and ckpt.model_checkpoint_path:
             print("Restore from ", ckpt.model_checkpoint_path)
@@ -27,9 +31,12 @@ def evaluate(model_dir, data_dir, dataset_type, max_steps):
         keep_rate_ph = sess.graph.get_tensor_by_name(
             'Input/dropout_keep_rate:0')
         accuracy = sess.graph.get_tensor_by_name('Evaluation/accuracy:0')
-
         images, labels = mnist_input.input_pipeline(
             data_dir, BATCH_SIZE, type=dataset_type)
+        global_step = tf.get_collection(tf.GraphKeys.VARIABLES, 'global_step')[0]
+
+        acc_step = sess.run(global_step)
+        print('accumulated step = %d' % acc_step)
 
         coord = tf.train.Coordinator()
         # Note: QueueRunner created in mnist_input.py
@@ -62,19 +69,26 @@ def evaluate(model_dir, data_dir, dataset_type, max_steps):
 
         coord.join(threads)
         pred_accuracy = acc / (step * BATCH_SIZE)
+        eval_writer = tf.train.SummaryWriter(log_dir + '/evaluation', sess.graph)
+        summary = tf.Summary(value=[
+            tf.Summary.Value(tag='Evaluation/accuracy ' + dataset_map[dataset_type], simple_value=pred_accuracy), 
+        ])
+        eval_writer.add_summary(summary, acc_step)        
         print("Accuracy: %.5f, elipsed time: %.5f sec for %d samples" %
               (pred_accuracy, elapsed_time, step * BATCH_SIZE))
+
 
 
 def run():
     data_dir = os.path.join(os.getcwd(), 'MNIST_data')
     model_dir = os.path.join(os.getcwd(), 'models')
+    log_dir = os.path.join(os.getcwd(), 'logs')
     print('Validation accuracy:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.validation, 5000 / BATCH_SIZE)
+    evaluate(model_dir, data_dir, log_dir, mnist_input.DataTypes.validation, 5000 / BATCH_SIZE)
     print('Test accurary:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.test, 10000 / BATCH_SIZE)
+    evaluate(model_dir, data_dir, log_dir, mnist_input.DataTypes.test, 10000 / BATCH_SIZE)
     print('Train accurary:')
-    evaluate(model_dir, data_dir, mnist_input.DataTypes.train, 55000 / BATCH_SIZE)
+    evaluate(model_dir, data_dir, log_dir, mnist_input.DataTypes.train, 55000 / BATCH_SIZE)
 
 
 if __name__ == '__main__':
