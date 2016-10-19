@@ -51,12 +51,13 @@ import numpy as np
 import tensorflow as tf
 import drone_tfrecords as tfr
 
-TRAIN_SHARDS = 2
-VALIDATION_SHARDS = 2
-TEST_SHARDS = 2
+TRAIN_SHARDS = 100
+VALIDATION_SHARDS = 10
+TEST_SHARDS = 20
 SHARDS = {'validation': 2, 'train': 2, 'test': 2}
 NUM_THREADS = 2
 LABELS_FILE = 'labels.txt'
+IMAGE_SIZE = 101
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -85,6 +86,11 @@ class ImageCoder(object):
         self._decode_jpeg = tf.image.decode_jpeg(
             self._decode_jpeg_data, channels=3)
 
+        self._new_height = tf.placeholder(dtype=tf.int32)
+        self._new_width = tf.placeholder(dtype=tf.int32)
+        self._resize_decode_jpeg = tf.image.resize_images(
+            self._decode_jpeg, self._new_height, self._new_width)
+
     def png_to_jpeg(self, image_data):
         return self._sess.run(self._png_to_jpeg,
                               feed_dict={self._png_data: image_data})
@@ -94,6 +100,17 @@ class ImageCoder(object):
                                feed_dict={self._decode_jpeg_data: image_data})
         assert len(image.shape) == 3
         assert image.shape[2] == 3
+        return image
+
+    def resize_decode_jpeg(self, image_data, new_height, new_width):
+        image = self._sess.run(self._resize_decode_jpeg,
+                               feed_dict={
+                                   self._decode_jpeg_data: image_data,
+                                   self._new_height: new_height,
+                                   self._new_width: new_width
+                               })
+        #print(image.shape[0], image.shape[1], image.shape[2])
+        image = np.around(image).astype(np.uint8)
         return image
 
 
@@ -107,11 +124,12 @@ def _is_png(filename):
     return '.png' in filename
 
 
-def _process_image(filename, coder):
+def _process_image(filename, coder, resize=None):
     """Process a single image file.
   Args:
     filename: string, path to an image file e.g., '/path/to/example.JPG'.
     coder: instance of ImageCoder to provide TensorFlow image coding utils.
+    resize: 1D array with 2 elements for [height, width], None for not resizing.  
   Returns:
     image_buffer: string, JPEG encoding of RGB image.
     height: integer, image height in pixels.
@@ -127,7 +145,10 @@ def _process_image(filename, coder):
         image_data = coder.png_to_jpeg(image_data)
 
     # Decode the RGB JPEG.
-    image = coder.decode_jpeg(image_data)
+    if resize:
+        image = coder.resize_decode_jpeg(image_data, resize[0], resize[1])
+    else:
+        image = coder.decode_jpeg(image_data)
 
     # Check that image converted to RGB
     assert len(image.shape) == 3
@@ -135,12 +156,13 @@ def _process_image(filename, coder):
     width = image.shape[1]
     depth = image.shape[2]
     assert image.shape[2] == 3
+    #print(image.size)
 
     return image, height, width, depth
 
 
 def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
-                               texts, labels, num_shards, output_dir):
+                               texts, labels, num_shards, output_dir, resize):
     """Processes and saves list of images as TFRecord in 1 thread.
   Args:
     coder: instance of ImageCoder to provide TensorFlow image coding utils.
@@ -152,6 +174,8 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
     texts: list of strings; each string is human readable, e.g. 'dog'
     labels: list of integer; each integer identifies the ground truth
     num_shards: integer number of shards for this data set.
+    output_dir: string, root path to the output tfrecord files.    
+    resize: 1D array with 2 elements for [height, width], None for not resizing. 
   """
     # Each thread produces N shards where N = int(num_shards / num_threads).
     # For instance, if num_shards = 128, and the num_threads = 2, then the first
@@ -181,10 +205,10 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
             label = labels[i]
             text = texts[i]
 
-            image_raw, height, width, depth = _process_image(filename, coder)
-
+            image_raw, height, width, depth = _process_image(filename, coder,
+                                                             resize)
             example = tfr.convert_to_example(filename, image_raw, label, text,
-                                          height, width, depth)
+                                             height, width, depth)
             writer.write(example.SerializeToString())
             shard_counter += 1
             counter += 1
@@ -207,14 +231,17 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
 
 
 def _process_image_files(name, filenames, texts, labels, num_shards,
-                         output_dir):
+                         output_dir, resize):
     """Process and save list of images as TFRecord of Example protos.
   Args:
     name: string, unique identifier specifying the data set
     filenames: list of strings; each string is a path to an image file
-    texts: list of strings; each string is human readable, e.g. 'dog'
+    texts: list of strings; each string is human readable, e.g. 'TR, TL, GS'
     labels: list of integer; each integer identifies the ground truth
     num_shards: integer number of shards for this data set.
+    output_dir: string, root path to the output tfrecord files.
+    resize: 1D array with 2 elements for [height, width], None for not resizing.  
+
   """
     assert len(filenames) == len(texts)
     assert len(filenames) == len(labels)
@@ -239,7 +266,7 @@ def _process_image_files(name, filenames, texts, labels, num_shards,
     threads = []
     for thread_index in xrange(len(ranges)):
         args = (coder, thread_index, ranges, name, filenames, texts, labels,
-                num_shards, output_dir)
+                num_shards, output_dir, resize)
         t = threading.Thread(target=_process_image_files_batch, args=args)
         t.start()
         threads.append(t)
@@ -257,15 +284,15 @@ def _find_image_files(data_dir, labels_file):
     data_dir: string, path to the root directory of images.
       Assumes that the image data set resides in JPEG files located in
       the following directory structure.
-        data_dir/dog/another-image.JPEG
-        data_dir/dog/my-image.jpg
+        data_dir/GS/another-image.JPEG
+        data_dir/GS/my-image.jpg
       where 'dog' is the label associated with these images.
     labels_file: string, path to the labels file.
       The list of valid labels are held in this file. Assumes that the file
       contains entries as such:
-        dog
-        cat
-        flower
+        GS
+        TL
+        TR
       where each line corresponds to a label. We map each label contained in
       the file to an integer starting with the integer 0 corresponding to the
       label contained in the first line.
@@ -275,8 +302,9 @@ def _find_image_files(data_dir, labels_file):
     labels: list of integer; each integer identifies the ground truth.
   """
     print('Determining list of input files and labels from %s.' % data_dir)
-    unique_labels = [l.strip()
-                     for l in tf.gfile.FastGFile(labels_file, 'r').readlines()]
+    unique_labels = [
+        l.strip() for l in tf.gfile.FastGFile(labels_file, 'r').readlines()
+    ]
 
     labels = []
     filenames = []
@@ -315,17 +343,24 @@ def _find_image_files(data_dir, labels_file):
     return filenames, texts, labels
 
 
-def _process_dataset(name, data_dir, output_dir, num_shards, labels_file):
+def _process_dataset(name,
+                     data_dir,
+                     output_dir,
+                     num_shards,
+                     labels_file,
+                     resize=None):
     """Process a complete data set and save it as a TFRecord.
   Args:
     name: string, unique identifier specifying the data set.
-    directory: string, root path to the data set.
+    data_dir: string, root path to the data set.
+    output_dir: string, root path to the output tfrecord files.
     num_shards: integer number of shards for this data set.
     labels_file: string, path to the labels file.
+    resize: 1D array with 2 elements for [height, width], None for not resizing.  
   """
     filenames, texts, labels = _find_image_files(data_dir, labels_file)
     _process_image_files(name, filenames, texts, labels, num_shards,
-                         output_dir)
+                         output_dir, resize)
 
 
 def run():
@@ -354,7 +389,7 @@ def run():
 
     for i in ['validation', 'train', 'test']:
         _process_dataset(i, data_dirs[i], output_dirs[i], SHARDS[i],
-                         labels_file)
+                         labels_file, [IMAGE_SIZE, IMAGE_SIZE])
 
 
 if __name__ == '__main__':

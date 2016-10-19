@@ -18,8 +18,7 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def convert_to_example(filename, image_raw, label, text, height, width,
-                        depth):
+def convert_to_example(filename, image_raw, label, text, height, width, depth):
     """Build an Example proto for an example.
       Args:
         filename: string, path to an image file, e.g., '/path/to/example.JPG'
@@ -45,7 +44,7 @@ def convert_to_example(filename, image_raw, label, text, height, width,
     return example
 
 
-def read_and_decode_example(filename_queue):
+def read_and_decode_example(filename_queue, one_hot_size=1):
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
     features = tf.parse_single_example(
@@ -65,6 +64,8 @@ def read_and_decode_example(filename_queue):
     depth = tf.cast(features['image/depth'], tf.int32)
     image = tf.decode_raw(features['image/raw'], tf.uint8)
     label_id = tf.cast(features['image/class/label'], tf.int32)
+    if one_hot_size > 1:
+        label_id = tf.one_hot(label_id, one_hot_size)
     label_txt = features['image/class/text']
     filename = features['image/filename']
     return image, height, width, depth, label_id, label_txt, filename
