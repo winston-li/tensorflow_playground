@@ -8,34 +8,11 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
+import drone_tfrecords as tfr
+
 BATCH_SIZE = 3  # read 3 tfrecords per batch
 MAX_STEPS = 1  # display how many batches per tfrecord file
 NEW_SIZE = 101
-
-
-def read_and_decode_tfr(filename_queue):
-    reader = tf.TFRecordReader()
-    _, serialized_example = reader.read(filename_queue)
-    features = tf.parse_single_example(
-        serialized_example,
-        features={
-            'image/height': tf.FixedLenFeature([], tf.int64),
-            'image/width': tf.FixedLenFeature([], tf.int64),
-            'image/depth': tf.FixedLenFeature([], tf.int64),
-            'image/raw': tf.FixedLenFeature([], tf.string),
-            'image/class/label': tf.FixedLenFeature([], tf.int64),
-            'image/class/text': tf.FixedLenFeature([], tf.string),
-            'image/filename': tf.FixedLenFeature([], tf.string)
-        })
-
-    height = tf.cast(features['image/height'], tf.int32)
-    width = tf.cast(features['image/width'], tf.int32)
-    depth = tf.cast(features['image/depth'], tf.int32)
-    image = tf.decode_raw(features['image/raw'], tf.uint8)
-    label_id = tf.cast(features['image/class/label'], tf.int32)
-    label_txt = features['image/class/text']
-    filename = features['image/filename']
-    return image, height, width, depth, label_id, label_txt, filename
 
 
 def input_pipeline(filename, batch_size):
@@ -45,7 +22,7 @@ def input_pipeline(filename, batch_size):
     filename_queue = tf.train.string_input_producer(
         [filename], name='string_input_producer')
 
-    image, height, width, depth, label_id, label_txt, filename = read_and_decode_tfr(
+    image, height, width, depth, label_id, label_txt, filename = tfr.read_and_decode_example(
         filename_queue)
 
     # Collect examples into batch_size batches.

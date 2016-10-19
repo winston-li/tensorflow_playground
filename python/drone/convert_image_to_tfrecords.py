@@ -49,6 +49,7 @@ import threading
 
 import numpy as np
 import tensorflow as tf
+import drone_tfrecords as tfr
 
 TRAIN_SHARDS = 2
 VALIDATION_SHARDS = 2
@@ -64,46 +65,6 @@ LABELS_FILE = 'labels.txt'
 #   TR (i.e. Turn Right)
 # where each line corresponds to a label. We map each label contained in
 # the file to an integer corresponding to the line number starting from 0.
-
-
-def _int64_feature(value):
-    """Wrapper for inserting int64 features into Example proto."""
-    if not isinstance(value, list):
-        value = [value]
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
-
-
-def _bytes_feature(value):
-    """Wrapper for inserting bytes features into Example proto."""
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
-
-def _convert_to_example(filename, image_raw, label, text, height, width,
-                        depth):
-    """Build an Example proto for an example.
-  Args:
-    filename: string, path to an image file, e.g., '/path/to/example.JPG'
-    image_raw: string, image raw data 
-    label: integer, identifier for the ground truth for the network
-    text: string, unique human-readable, e.g. 'TR'
-    height: integer, image height in pixels
-    width: integer, image width in pixels
-    depth: integer, image depth
-  Returns:
-    Example proto
-  """
-
-    example = tf.train.Example(features=tf.train.Features(feature={
-        'image/height': _int64_feature(height),
-        'image/width': _int64_feature(width),
-        'image/depth': _int64_feature(depth),
-        'image/raw': _bytes_feature(image_raw.tostring()),
-        'image/class/label': _int64_feature(label),
-        'image/class/text': _bytes_feature(text),
-        'image/filename':
-        _bytes_feature(os.path.join(text, os.path.basename(filename)))
-    }))
-    return example
 
 
 class ImageCoder(object):
@@ -222,7 +183,7 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
 
             image_raw, height, width, depth = _process_image(filename, coder)
 
-            example = _convert_to_example(filename, image_raw, label, text,
+            example = tfr.convert_to_example(filename, image_raw, label, text,
                                           height, width, depth)
             writer.write(example.SerializeToString())
             shard_counter += 1
