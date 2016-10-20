@@ -11,9 +11,10 @@ import matplotlib.pyplot as plt
 import drone_tfrecords as tfr
 import drone_input
 
-BATCH_SIZE = 3  # read 3 tfrecords per batch
+BATCH_SIZE = 100  # read how many tfrecords per batch
 MAX_STEPS = 1  # display how many batches
-NEW_IMAGE_SIZE = 101
+DISPLAY_PER_BATCH = 2 # disply images per batch
+NEW_IMAGE_SIZE = 101 # for viewing resized images
 
 
 def check_tfrs(data_dir, max_steps, batch_size, type):
@@ -34,24 +35,26 @@ def check_tfrs(data_dir, max_steps, batch_size, type):
                         filenames
                     ])
 
+                anchor = BATCH_SIZE // DISPLAY_PER_BATCH
                 for i in range(len(images_r)):
-                    print('height: %d, width: %d, depth: %d' %
-                          (heights_r[i], widths_r[i], depths_r[i]))
-                    print('label_id: %s, label_txt: %s, filename: %s' %
-                          (label_ids_r[i], label_txts_r[i], filenames_r[i]))
-                    #print(images_r[i].size)      
-                    img = images_r[i].reshape(
-                        [heights_r[i], widths_r[i], depths_r[i]])
-                    plt.imshow(img)
-                    plt.show()
-
-                    if (heights_r[i] != NEW_IMAGE_SIZE or widths_r[i] != NEW_IMAGE_SIZE):
-                        re_image = tf.image.resize_images(images_r[i].reshape(
-                            [heights_r[i], widths_r[i], depths_r[i]]),
-                                                          NEW_IMAGE_SIZE, NEW_IMAGE_SIZE)
-                        img2 = sess.run(re_image)
-                        plt.imshow(np.around(img2).astype(np.uint8))
+                    if (i + 1) % anchor == 0:
+                        print('height: %d, width: %d, depth: %d' %
+                              (heights_r[i], widths_r[i], depths_r[i]))
+                        print('label_id: %s, label_txt: %s, filename: %s' %
+                              (label_ids_r[i], label_txts_r[i], filenames_r[i]))
+                        #print(images_r[i].size)
+                        img = images_r[i].reshape(
+                            [heights_r[i], widths_r[i], depths_r[i]])
+                        plt.imshow(img)
                         plt.show()
+
+                        if (heights_r[i] != NEW_IMAGE_SIZE or widths_r[i] != NEW_IMAGE_SIZE):
+                            re_image = tf.image.resize_images(images_r[i].reshape(
+                                [heights_r[i], widths_r[i], depths_r[i]]),
+                                                              NEW_IMAGE_SIZE, NEW_IMAGE_SIZE)
+                            img2 = sess.run(re_image)
+                            plt.imshow(np.around(img2).astype(np.uint8))
+                            plt.show()
                 step += 1
 
         except tf.errors.OutOfRangeError:
