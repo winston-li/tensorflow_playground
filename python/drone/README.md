@@ -118,6 +118,21 @@ The graph model visualized on TensorBoard as follows,
   Accuracy  (validataion): 0.76800, elipsed time: 15.10091 sec for 1500 samples
   Accuracy  (test): 0.52809, elipsed time: 327.62329 sec for 34000 samples
   Accuracy  (train): 0.94348, elipsed time: 706.66852 sec for 72900 samples
+
+  ---Training---
+  Resume training after /home/Winston/python/drone/models/model.ckpt-14560
+  accumulated step = 14560
+  prevous avg_loss = 0.224
+  2016-10-21 06:55:10.957882: step 10, train_loss = 0.277702 (32.2 examples/sec; 1.553 sec/batch)
+  ...
+  2016-10-21 08:16:06.221006: step 2910, train_loss = 0.158320 (30.2 examples/sec; 1.656 sec/batch)
+
+  ---Evaluation---
+  Restore from  /home/Winston/python/drone/models/model.ckpt-17472
+  Accuracy  (validataion): 0.74733, elipsed time: 15.24425 sec for 1500 samples
+  Accuracy  (test): 0.57953, elipsed time: 328.94416 sec for 34000 samples
+  Accuracy  (train): 0.96112, elipsed time: 713.80447 sec for 72900 samples
+
   ```
   The CPU utilization during training:
   ![](img/cpu_train.png)
@@ -125,5 +140,10 @@ The graph model visualized on TensorBoard as follows,
   The CPU utilization during evaluation:
   ![](img/cpu_eval.png)
 
+  The training loss curve:
+  ![](img/cpu_loss_curve.png)
+
+  The accuracy evaluation curve:
+  ![](img/cpu_accuracy_curve.png)
 - GPU/GPUs (Azure NC6/NC12 VM):
 
