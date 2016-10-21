@@ -10,6 +10,9 @@ The differences:
 - use ReLU instead of hyperbolic tangent activation function 
 - add dropout layer
 
+The graph model visualized on TensorBoard as follows,
+![](img/drone_model.png)
+
 ### Steps
 - Training machines:
 
@@ -46,7 +49,7 @@ The differences:
   recent mini-batch's loss.
 
 ### Experiments
-- CPUs:
+- CPUs (Azure A3 Standard 4 Cores VM):
 ```
   ---Training---
   Grand New training
@@ -116,6 +119,11 @@ The differences:
   Accuracy  (test): 0.52809, elipsed time: 327.62329 sec for 34000 samples
   Accuracy  (train): 0.94348, elipsed time: 706.66852 sec for 72900 samples
   ```
+  The CPU utilization during training:
+  ![](img/cpu_train.png)
 
-- GPU/GPUs:
+  The CPU utilization during evaluation:
+  ![](img/cpu_eval.png)
+
+- GPU/GPUs (Azure NC6/NC12 VM):
 
