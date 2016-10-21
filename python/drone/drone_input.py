@@ -7,9 +7,10 @@ import os.path
 import numpy as np
 import drone_tfrecords as tfr
 
-VALIDATION_DATA_SIZE = 5000
-IMAGE_SIZE = 101
-IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
+IMAGE_HEIGHT = 101
+IMAGE_WIDTH = 101
+IMAGE_DEPTH = 3
+IMAGE_PIXELS = IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_DEPTH
 NUM_CLASSES = 3
 
 TFRECORDS_DIRS = ['train', 'validation', 'test']
@@ -19,11 +20,11 @@ class DataTypes:
     train, validation, test = range(3)
 
 
-def input_pipeline(data_dir, batch_size, type=DataTypes.train):
+def input_pipeline(data_dir, batch_size, type=DataTypes.train, transform=None):
     tfr_dir = os.path.join(data_dir, TFRECORDS_DIRS[type])
     tfr_file_path = '%s/*' % (tfr_dir)
     matching_files = tf.gfile.Glob(tfr_file_path)
-    print(matching_files)
+    #print(matching_files)
 
     #   ATTENTION:
     #   DO NOT set num_epochs in string_input_producer, otherwise uninitialized variable error occurs...
@@ -32,7 +33,7 @@ def input_pipeline(data_dir, batch_size, type=DataTypes.train):
         matching_files, name='string_input_producer')
 
     image, height, width, depth, label_id, label_txt, filename = tfr.read_and_decode_example(
-        filename_queue, NUM_CLASSES)
+        filename_queue, transform=transform, one_hot_size=NUM_CLASSES)
 
     # Collect examples into batch_size batches.
     # (Internally uses a Queue.)

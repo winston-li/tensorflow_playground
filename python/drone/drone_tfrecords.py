@@ -44,7 +44,7 @@ def convert_to_example(filename, image_raw, label, text, height, width, depth):
     return example
 
 
-def read_and_decode_example(filename_queue, one_hot_size=1):
+def read_and_decode_example(filename_queue, transform=None, one_hot_size=1):
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
     features = tf.parse_single_example(
@@ -63,6 +63,8 @@ def read_and_decode_example(filename_queue, one_hot_size=1):
     width = tf.cast(features['image/width'], tf.int32)
     depth = tf.cast(features['image/depth'], tf.int32)
     image = tf.decode_raw(features['image/raw'], tf.uint8)
+    if transform:
+        image = transform(image)
     label_id = tf.cast(features['image/class/label'], tf.int32)
     if one_hot_size > 1:
         label_id = tf.one_hot(label_id, one_hot_size)

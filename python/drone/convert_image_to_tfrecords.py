@@ -34,7 +34,7 @@ contains the following fields:
     The label ranges from [0, num_labels] where 0 is unused and left as
     the background class.
   image/class/text: string specifying the human-readable version of the label
-    e.g. 'dog'
+    e.g. 'GS','TL','TR'
 If you data set involves bounding boxes, please look at build_imagenet_data.py.
 """
 from __future__ import absolute_import
@@ -51,13 +51,11 @@ import numpy as np
 import tensorflow as tf
 import drone_tfrecords as tfr
 
-TRAIN_SHARDS = 100
-VALIDATION_SHARDS = 10
-TEST_SHARDS = 20
-SHARDS = {'validation': 2, 'train': 2, 'test': 2}
-NUM_THREADS = 2
+SHARDS = {'validation': 5, 'train': 100, 'test': 50}
+NUM_THREADS = 5
 LABELS_FILE = 'labels.txt'
-IMAGE_SIZE = 101
+IMAGE_HEIGHT = 101
+IMAGE_WIDTH = 101
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -135,20 +133,25 @@ def _process_image(filename, coder, resize=None):
     height: integer, image height in pixels.
     width: integer, image width in pixels.
   """
-    # Read the image file.
-    with tf.gfile.FastGFile(filename, 'r') as f:
-        image_data = f.read()
+    try:
+        # Read the image file.
+        with tf.gfile.FastGFile(filename, 'r') as f:
+            image_data = f.read()
 
-    # Convert any PNG to JPEG's for consistency.
-    if _is_png(filename):
-        print('Converting PNG to JPEG for %s' % filename)
-        image_data = coder.png_to_jpeg(image_data)
+        # Convert any PNG to JPEG's for consistency.
+        if _is_png(filename):
+            print('Converting PNG to JPEG for %s' % filename)
+            image_data = coder.png_to_jpeg(image_data)
 
-    # Decode the RGB JPEG.
-    if resize:
-        image = coder.resize_decode_jpeg(image_data, resize[0], resize[1])
-    else:
-        image = coder.decode_jpeg(image_data)
+        # Decode the RGB JPEG.
+        if resize:
+            image = coder.resize_decode_jpeg(image_data, resize[0], resize[1])
+        else:
+            image = coder.decode_jpeg(image_data)
+
+    except:
+      print('Error decoding %s' % filename)
+      raise
 
     # Check that image converted to RGB
     assert len(image.shape) == 3
@@ -171,7 +174,7 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
       analyze in parallel.
     name: string, unique identifier specifying the data set
     filenames: list of strings; each string is a path to an image file
-    texts: list of strings; each string is human readable, e.g. 'dog'
+    texts: list of strings; each string is human readable, e.g. 'GS'
     labels: list of integer; each integer identifies the ground truth
     num_shards: integer number of shards for this data set.
     output_dir: string, root path to the output tfrecord files.    
@@ -286,7 +289,7 @@ def _find_image_files(data_dir, labels_file):
       the following directory structure.
         data_dir/GS/another-image.JPEG
         data_dir/GS/my-image.jpg
-      where 'dog' is the label associated with these images.
+      where 'GS' is the label associated with these images.
     labels_file: string, path to the labels file.
       The list of valid labels are held in this file. Assumes that the file
       contains entries as such:
@@ -298,7 +301,7 @@ def _find_image_files(data_dir, labels_file):
       label contained in the first line.
   Returns:
     filenames: list of strings; each string is a path to an image file.
-    texts: list of strings; each string is the class, e.g. 'dog'
+    texts: list of strings; each string is the class, e.g. 'GS'
     labels: list of integer; each integer identifies the ground truth.
   """
     print('Determining list of input files and labels from %s.' % data_dir)
@@ -310,8 +313,7 @@ def _find_image_files(data_dir, labels_file):
     filenames = []
     texts = []
 
-    # Leave label index 0 empty as a background class.
-    label_index = 1
+    label_index = 0
 
     # Construct the list of JPEG files and labels.
     for text in unique_labels:
@@ -321,10 +323,6 @@ def _find_image_files(data_dir, labels_file):
         labels.extend([label_index] * len(matching_files))
         texts.extend([text] * len(matching_files))
         filenames.extend(matching_files)
-
-        if not label_index % 100:
-            print('Finished finding files in %d of %d classes.' %
-                  (label_index, len(labels)))
         label_index += 1
 
     # Shuffle the ordering of all image files in order to guarantee
@@ -376,11 +374,11 @@ def run():
         output_dirs[i] = os.path.join(output_dir, i)
         tf.gfile.MakeDirs(output_dirs[i])
 
-    assert not TRAIN_SHARDS % NUM_THREADS, (
+    assert not SHARDS['train'] % NUM_THREADS, (
         'Please make the num_threads commensurate with train_shards')
-    assert not VALIDATION_SHARDS % NUM_THREADS, (
+    assert not SHARDS['validation'] % NUM_THREADS, (
         'Please make the num_threads commensurate with validation_shards')
-    assert not TEST_SHARDS % NUM_THREADS, (
+    assert not SHARDS['test'] % NUM_THREADS, (
         'Please make the num_threads commensurate with test_shards')
     print('Saving results to %s' % data_dir)
 
@@ -389,7 +387,7 @@ def run():
 
     for i in ['validation', 'train', 'test']:
         _process_dataset(i, data_dirs[i], output_dirs[i], SHARDS[i],
-                         labels_file, [IMAGE_SIZE, IMAGE_SIZE])
+                         labels_file, [IMAGE_HEIGHT, IMAGE_WIDTH])
 
 
 if __name__ == '__main__':

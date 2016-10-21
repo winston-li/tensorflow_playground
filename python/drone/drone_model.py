@@ -9,8 +9,9 @@ import math
 import drone_input
 
 # Network Parameters
-NUM_INPUT_XS = drone_input.IMAGE_SIZE
-NUM_INPUT_YS = drone_input.IMAGE_SIZE
+NUM_INPUT_XS = drone_input.IMAGE_WIDTH
+NUM_INPUT_YS = drone_input.IMAGE_HEIGHT
+NUM_INPUT_ZS = drone_input.IMAGE_DEPTH
 NUM_INPUT_FEATURES = drone_input.IMAGE_PIXELS
 NUM_OUTPUT = drone_input.NUM_CLASSES
 NUM_FC_1 = 200  # 1st fully-connected layer number of features
@@ -95,14 +96,15 @@ def _maxpool_layer(input_tensor, ksize, layer_name):
 
 def _build_model(input_tensor, dropout_keep_rate):
     # Convolutional Layer (4x4 patch size, 3 input channels, 32 output channels)
-    x_image = tf.reshape(input_tensor, [-1, NUM_INPUT_XS, NUM_INPUT_YS, 1])
+    x_image = tf.reshape(input_tensor, [-1, NUM_INPUT_XS, NUM_INPUT_YS, NUM_INPUT_ZS])
     layer_1 = _conv_layer(
-        x_image, 4, 3, NUM_CONV_1,
+        x_image, 4, NUM_INPUT_ZS, NUM_CONV_1,
         'layer1')  # outputs: NUM_CONV_1 * (NUM_INPUT_XS-3) * (NUM_INPUT_YS-3)
 
-    # 2x2 Max Pooling Layer
-    xs = (NUM_INPUT_XS - 3) // 2
-    ys = (NUM_INPUT_YS - 3) // 2 
+    # 2x2 Max Pooling Layer 
+    # Note: maxpooling with 'SAME' padding, +1 for xs,ys ceiling value of division 
+    xs = (NUM_INPUT_XS - 3 + 1) // 2
+    ys = (NUM_INPUT_YS - 3 + 1) // 2 
     layer_2 = _maxpool_layer(layer_1, 2,
                              'layer2')  # outputs: NUM_CONV_1 * xs * ys
 
@@ -111,8 +113,8 @@ def _build_model(input_tensor, dropout_keep_rate):
                           'layer3')  # outputs: NUM_CONV_2 * (xs-3) * (ys-3)
 
     # 2x2 Max Pooling Layer
-    xs = (xs - 3) // 2
-    ys = (ys - 3) // 2
+    xs = (xs - 3 + 1) // 2
+    ys = (ys - 3 + 1) // 2
     layer_4 = _maxpool_layer(layer_3, 2,
                              'layer4')  # outputs: NUM_CONV_2 * xs * ys
 
@@ -121,8 +123,8 @@ def _build_model(input_tensor, dropout_keep_rate):
                           'layer5')  # outputs: NUM_CONV_3 * (xs-3) * (ys-3)
 
     # 2x2 Max Pooling Layer
-    xs = (xs - 3) // 2
-    ys = (ys - 3) // 2
+    xs = (xs - 3 + 1) // 2
+    ys = (ys - 3 + 1) // 2
     layer_6 = _maxpool_layer(layer_5, 2,
                              'layer6')  # outputs: NUM_CONV_3 * xs * ys
 
@@ -132,8 +134,8 @@ def _build_model(input_tensor, dropout_keep_rate):
                           'layer7')  # outputs: NUM_CONV_4 * (xs-3) * (ys-3)
 
     # 2x2 Max Pooling Layer
-    xs = (xs - 3) // 2
-    ys = (ys - 3) // 2
+    xs = (xs - 3 + 1) // 2
+    ys = (ys - 3 + 1) // 2
     layer_8 = _maxpool_layer(layer_7, 2,
                              'layer8')  # outputs: NUM_CONV_4 * xs * ys
 
@@ -161,7 +163,7 @@ def inference(input_tensor, dropout_keep_rate):
 def placeholders():
     with tf.name_scope('Input'):
         images_ph = tf.placeholder(
-            tf.float32, [None, NUM_INPUT_XS * NUM_INPUT_YS], name='images')
+            tf.float32, [None, NUM_INPUT_FEATURES], name='images')
         labels_ph = tf.placeholder(
             tf.float32, [None, NUM_OUTPUT], name='labels')
         keep_rate_ph = tf.placeholder(tf.float32, name='dropout_keep_rate')

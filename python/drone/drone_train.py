@@ -15,14 +15,14 @@ from datetime import datetime
 import drone_model
 import drone_input
 
+TRAIN_DATA_SIZE = 24474 + 24913 + 23425  # 72812
 # Training Parameters
-VALIDATION_BATCH_SIZE = drone_input.VALIDATION_DATA_SIZE
 LEARNING_RATE = 0.01
-BATCH_SIZE = 10
+BATCH_SIZE = 1 #50
 DISPLAY_STEP = 10
 LOG_STEP = 100
 CKPT_STEP = 1000
-MAX_TRAINING_STEPS = 5500 * 2
+MAX_TRAINING_STEPS = 2 * TRAIN_DATA_SIZE // BATCH_SIZE
 
 
 def _get_checkpoint(model_dir):
@@ -31,6 +31,15 @@ def _get_checkpoint(model_dir):
         return ckpt.model_checkpoint_path
     else:
         return None
+
+# Note: 
+#   if use scale_intensity to transform the retrieved tfrecord image,
+#   it's suggested to use tf.nn.tanh() instead of tf.nn.relu() as 
+#   activation function in model graph.
+def scale_intensity(image_tensor):
+  # Convert from [0, 255] -> [-1, 1] floats.
+  image = tf.cast(image_tensor, tf.float32)
+  return tf.cast(image, tf.float32) * (1. / 255) - 1.0
 
 
 def train(data_dir,
@@ -47,8 +56,8 @@ def train(data_dir,
         avg_loss = drone_model.avg_loss()
         train_op = drone_model.training(loss, LEARNING_RATE, global_step)
         accuracy = drone_model.evaluation(pred, labels_ph)
-        images, labels = drone_input.input_pipeline(
-            data_dir, batch_size, drone_input.DataTypes.train)
+        images, _, _, _, labels, _, _ = drone_input.input_pipeline(
+            data_dir, batch_size, drone_input.DataTypes.train, transform=None)
 
         merged_summary_op = tf.merge_all_summaries()
 
@@ -80,7 +89,6 @@ def train(data_dir,
                     break
 
                 images_r, labels_r = sess.run([images, labels])
-
                 train_feed = {
                     images_ph: images_r,
                     labels_ph: labels_r,
@@ -130,13 +138,12 @@ def train(data_dir,
 
 
 def run():
-    data_dir = os.path.join(os.getcwd(), 'drone_data')
+    data_dir = os.path.join(os.getcwd(), 'drone_data', 'tfrecord')
     model_dir = os.path.join(os.getcwd(), 'models')
     log_dir = os.path.join(os.getcwd(), 'logs')
     tf.gfile.MakeDirs(model_dir)
     tf.gfile.MakeDirs(log_dir)
 
-    drone_input.maybe_download_and_convert(data_dir)
     train(data_dir, model_dir, log_dir, BATCH_SIZE, MAX_TRAINING_STEPS)
 
 

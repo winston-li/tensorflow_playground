@@ -12,15 +12,15 @@ import drone_tfrecords as tfr
 import drone_input
 
 BATCH_SIZE = 100  # read how many tfrecords per batch
-MAX_STEPS = 1  # display how many batches
-DISPLAY_PER_BATCH = 2 # disply images per batch
+MAX_STEPS = 3  # display how many batches
+DISPLAY_PER_BATCH = 2 # display images per batch
 NEW_IMAGE_SIZE = 101 # for viewing resized images
 
 
 def check_tfrs(data_dir, max_steps, batch_size, type):
     with tf.Session() as sess:
         images, heights, widths, depths, label_ids, label_txts, filenames = drone_input.input_pipeline(
-            data_dir, batch_size, type)
+            data_dir, batch_size, type, transform=None)
 
         coord = tf.train.Coordinator()
         # Note: QueueRunner created in drone_input.py
@@ -42,10 +42,11 @@ def check_tfrs(data_dir, max_steps, batch_size, type):
                               (heights_r[i], widths_r[i], depths_r[i]))
                         print('label_id: %s, label_txt: %s, filename: %s' %
                               (label_ids_r[i], label_txts_r[i], filenames_r[i]))
+                        print('label: %d' % (np.argmax(label_ids_r[i])) )      
                         #print(images_r[i].size)
                         img = images_r[i].reshape(
                             [heights_r[i], widths_r[i], depths_r[i]])
-                        plt.imshow(img)
+                        plt.imshow(np.around(img).astype(np.uint8))
                         plt.show()
 
                         if (heights_r[i] != NEW_IMAGE_SIZE or widths_r[i] != NEW_IMAGE_SIZE):
