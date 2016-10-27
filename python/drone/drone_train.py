@@ -18,7 +18,7 @@ import drone_input
 TRAIN_DATA_SIZE = 24474 + 24913 + 23425  # 72812
 # Training Parameters
 LEARNING_RATE = 0.01
-BATCH_SIZE = 1 #50
+BATCH_SIZE = 50
 DISPLAY_STEP = 10
 LOG_STEP = 100
 CKPT_STEP = 1000
@@ -66,7 +66,7 @@ def train(data_dir,
         ckpt = _get_checkpoint(model_dir)
         if not ckpt:
             print("Grand New training")
-            init_op = tf.initialize_all_variables()
+            init_op = tf.group(tf.initialize_all_variables(), tf.initialize_local_variables())
             sess.run(init_op)
         else:
             print("Resume training after %s" % ckpt)
@@ -80,7 +80,7 @@ def train(data_dir,
 
         acc_step = sess.run(global_step)
         print('accumulated step = %d' % acc_step)
-        print('prevous avg_loss = %.3f' % sess.run(avg_loss))
+        print('previous avg_loss = %.3f' % sess.run(avg_loss))
         # Training cycle
         try:
             lst = []
@@ -126,7 +126,7 @@ def train(data_dir,
                     saver.save(sess, ckpt_path, global_step)
 
         except tf.errors.OutOfRangeError:
-            print('Done training for %d epochs' % (num_epochs))
+            print('Done training')
 
         finally:
             # When done, ask the threads to stop

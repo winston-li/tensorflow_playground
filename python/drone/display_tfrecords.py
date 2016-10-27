@@ -70,8 +70,13 @@ def check_tfrs(data_dir, max_steps, batch_size, type):
 
 def run():
     tfr_dir = os.path.join(os.getcwd(), 'drone_data', 'tfrecord')
+    print('Check training set: ')
+    check_tfrs(tfr_dir, MAX_STEPS, BATCH_SIZE, drone_input.DataTypes.train)
+    print('Check validation set: ')
     check_tfrs(tfr_dir, MAX_STEPS, BATCH_SIZE,
                drone_input.DataTypes.validation)
+    print('Check testing set: ')
+    check_tfrs(tfr_dir, MAX_STEPS, BATCH_SIZE, drone_input.DataTypes.test)
 
 
 if __name__ == '__main__':

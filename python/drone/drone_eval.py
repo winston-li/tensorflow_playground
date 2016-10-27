@@ -9,15 +9,10 @@ import drone_input
 import numpy as np
 
 BATCH_SIZE = 100
-# GS + TL + TR for followings 
-TRAIN_DATA_SIZE = 24474 + 24913 + 23425  # 72812
-VALIDATION_DATA_SIZE = 722 + 211 + 476   #  1409
-TEST_DATA_SIZE = 25738 + 4083 + 4084     # 33905
-
-dataset_map = [' (train)', ' (validataion)', ' (test)']
+dataset_map = [' (train)', ' (validataion)', ' (test)', ' (all)']
 
 
-def evaluate(model_dir, data_dir, log_dir, dataset_type, max_steps):
+def evaluate(model_dir, data_dir, log_dir, dataset_type):
     with tf.Session() as sess:
         # Restore Graph
         ckpt = tf.train.get_checkpoint_state(model_dir)
@@ -36,8 +31,10 @@ def evaluate(model_dir, data_dir, log_dir, dataset_type, max_steps):
             'Input/dropout_keep_rate:0')
         accuracy = sess.graph.get_tensor_by_name('Evaluation/accuracy:0')
         images, _, _, _, labels, _, _ = drone_input.input_pipeline(
-            data_dir, BATCH_SIZE, type=dataset_type)
+            data_dir, BATCH_SIZE, type=dataset_type, epochs=1)
         global_step = tf.get_collection(tf.GraphKeys.VARIABLES, 'global_step')[0]
+
+        sess.run(tf.initialize_local_variables()) # for string_input_producer in input_pipeline
 
         acc_step = sess.run(global_step)
         print('accumulated step = %d' % acc_step)
@@ -48,9 +45,9 @@ def evaluate(model_dir, data_dir, log_dir, dataset_type, max_steps):
 
         elapsed_time = 0.0
         acc = 0.0
+        count = 0
         try:
-            step = 0
-            while step < max_steps and not coord.should_stop():
+            while not coord.should_stop():
                 images_r, labels_r = sess.run([images, labels])
                 data_feed = {
                     images_ph: images_r,
@@ -61,25 +58,25 @@ def evaluate(model_dir, data_dir, log_dir, dataset_type, max_steps):
                 start_time = time.time()
                 value = sess.run(accuracy, feed_dict=data_feed)
                 elapsed_time += (time.time() - start_time)
-                acc += value * BATCH_SIZE
-                step += 1
+                acc += value * len(images_r)
+                count += len(images_r)
 
         except tf.errors.OutOfRangeError:
-            print('Done validation/test for %d samples' % (step * BATCH_SIZE))
+            print('Done evaluation for %d samples' % count)
 
         finally:
             # When done, ask the threads to stop
             coord.request_stop()
 
         coord.join(threads)
-        pred_accuracy = acc / (step * BATCH_SIZE)
+        pred_accuracy = acc / count
         eval_writer = tf.train.SummaryWriter(log_dir + '/evaluation', sess.graph)
         summary = tf.Summary(value=[
             tf.Summary.Value(tag='Evaluation/accuracy ' + dataset_map[dataset_type], simple_value=pred_accuracy), 
         ])
         eval_writer.add_summary(summary, acc_step)        
         print("Accuracy %s: %.5f, elipsed time: %.5f sec for %d samples" %
-              (dataset_map[dataset_type], pred_accuracy, elapsed_time, step * BATCH_SIZE))
+              (dataset_map[dataset_type], pred_accuracy, elapsed_time, count))
 
 
 
@@ -88,11 +85,11 @@ def run():
     model_dir = os.path.join(os.getcwd(), 'models')
     log_dir = os.path.join(os.getcwd(), 'logs')
     print('Validation accuracy:')
-    evaluate(model_dir, data_dir, log_dir, drone_input.DataTypes.validation, VALIDATION_DATA_SIZE / BATCH_SIZE)
+    evaluate(model_dir, data_dir, log_dir, drone_input.DataTypes.validation)
     print('Test accurary:')
-    evaluate(model_dir, data_dir, log_dir, drone_input.DataTypes.test, TEST_DATA_SIZE / BATCH_SIZE)
+    evaluate(model_dir, data_dir, log_dir, drone_input.DataTypes.test)
     print('Train accurary:')
-    evaluate(model_dir, data_dir, log_dir, drone_input.DataTypes.train, TRAIN_DATA_SIZE / BATCH_SIZE)
+    evaluate(model_dir, data_dir, log_dir, drone_input.DataTypes.train)
 
 
 if __name__ == '__main__':
