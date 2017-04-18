@@ -33,18 +33,18 @@ def _output_predictions(stats, output_dir):
         id_list.sort() # ascending frame number
         new_name = os.path.splitext(fname)[0] + '.pdt' 
         with open(os.path.join(output_dir, new_name), 'w') as f:
-            f.write('zero_based_frame_id, GS_prob, TL_prob, TR_prob\n') # header
+            f.write('TL_prob, GS_prob, TR_prob\n') # header
             for row in id_list:
-                f.write('%s, %.3f, %.3f, %.3f\n' %(row[0], row[1][0], row[1][1], row[1][2]))
+                f.write('%.3f, %.3f, %.3f\n' %(row[1][0], row[1][1], row[1][2]))
 
 def _output_error(stats, output_dir):
     for fname, id_list in stats.items():
-        # id_list content: (frame_id, [GS,TL,TR prob], [one-hot label])
+        # id_list content: (frame_id, [TL,GS,TR prob], [one-hot label])
         error_list = [item for item in id_list if np.argmax(item[1]) != np.argmax(item[2])]
         error_list.sort() # ascending frame number
         new_name = os.path.splitext(fname)[0] + '.err' 
         with open(os.path.join(output_dir, new_name), 'w') as f:
-            f.write('zero_based_frame_id, GS_prob, TL_prob, TR_prob, zero_based_true_label(GS,TL,TR)\n') # header
+            f.write('zero_based_frame_id, TL_prob, GS_prob, TR_prob, zero_based_true_label(TL,GS,TR)\n') # header
             for row in error_list:
                 f.write('%s, %.3f, %.3f, %.3f, %d\n' %(row[0], row[1][0], row[1][1], row[1][2], np.argmax(row[2])))
 
@@ -57,7 +57,7 @@ def predict(graph_path, data_dir, output_dir):
             data_dir, BATCH_SIZE, drone_input.DataTypes.all, epochs=1)
 
     stats = {}
-    # {'filename': [(frame_id, [GS prob, TL prob, TR prob], [one-hot true_label]), (), ...]}
+    # {'filename': [(frame_id, [TL prob, GS prob, TR prob], [one-hot true_label]), (), ...]}
 
     with tf.Session() as sess:
         sess.run(tf.initialize_local_variables()) # for string_input_producer in input_pipeline 
@@ -93,7 +93,7 @@ def predict(graph_path, data_dir, output_dir):
             coord.request_stop()
 
         coord.join(threads)
-        #_output_predictions(stats, output_dir)
+        _output_predictions(stats, output_dir)
         _output_error(stats, output_dir)
 
 

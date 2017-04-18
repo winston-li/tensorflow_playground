@@ -13,7 +13,9 @@ sudo apt-get -y install linux-headers-$(uname -r) linux-image-extra-`uname -r`
 
 # install cuda
 wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_7.5-18_amd64.deb
+###wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
 sudo dpkg -i cuda-repo-ubuntu1404_7.5-18_amd64.deb
+###sudo dpkg -i cuda-repo-ubuntu1604_8.0.44-1_amd64.deb
 rm cuda-repo-ubuntu1404_7.5-18_amd64.deb
 sudo apt-get update
 sudo apt-get install -y cuda
@@ -44,6 +46,18 @@ wget http://repo.continuum.io/archive/Anaconda3-4.1.1-Linux-x86_64.sh
 bash Anaconda3-4.1.1-Linux-x86_64.sh -b -p /mnt/bin/anaconda3
 rm Anaconda3-4.1.1-Linux-x86_64.sh 
 echo 'export PATH="/mnt/bin/anaconda3/bin:$PATH"' >> ~/.bashrc
+
+### OR
+###sudo apt-get install python-pip
+###echo 'export LANGUAGE=en_US.UTF-8
+###export LANG=en_US.UTF-8
+###export LC_ALL=en_US.UTF-8
+###export LC_CTYPE="en_US.UTF-8"
+###' >> ~/.bashrc
+###sudo locale-gen en_US.UTF-8
+###export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.10.0-cp27-none-linux_x86_64.whl
+###sudo pip install --upgrade $TF_BINARY_URL
+
 
 # install tensorflow
 export TF_BINARY_URL='https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.10.0-cp35-cp35m-linux_x86_64.whl'

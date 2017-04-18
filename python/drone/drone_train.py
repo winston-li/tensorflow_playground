@@ -15,7 +15,7 @@ from datetime import datetime
 import drone_model
 import drone_input
 
-TRAIN_DATA_SIZE = 24474 + 24913 + 23425  # 72812
+TRAIN_DATA_SIZE = 2655 #24474 + 24913 + 23425  # 72812
 # Training Parameters
 LEARNING_RATE = 0.01
 BATCH_SIZE = 50

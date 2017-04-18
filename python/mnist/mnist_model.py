@@ -17,12 +17,36 @@ NUM_FC_1 = 100  # 1st fully-connected layer number of features
 PATCH_SZ = 5  # convolution patch size 5x5
 NUM_CONV_1 = 20  # convolution layer1 output channels
 NUM_CONV_2 = 40  # convolution layer2 output channels
-
+CONV_WEIGHT_DECAY=0.0
+NN_WEIGHT_DECAY = 0.004
+VARIABLE_MOVING_AVERAGE_DECAY = 0.9999
+LOSS_MOVING_AVERAGE_DECAY = 0.9
 
 # Helper functions
 def _weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1 / math.sqrt(shape[0]))
     return tf.Variable(initial)
+
+
+def _weight_variable_with_decay(shape, wd=None):
+  """ Helper to create an initialized Variable with weight decay.
+
+   Note that the Variable is initialized with a truncated normal distribution.
+   A weight decay is added only if one is specified
+
+   Args:
+     shape: list of ints
+     wd: add L2 loss weight decay multiplied by this float. If None, weight
+         decay is not added for this variable
+   Returns:
+     Variable Tensor
+  """
+    initial = tf.truncated_normal(shape, stddev=0.1 / math.sqrt(shape[0]))
+    var = tf.Variable(initial)
+    if wd is not None:
+        weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
+        tf.add_to_collection('losses', weight_decay)
+    return var
 
 
 def _bias_variable(shape):
@@ -38,7 +62,7 @@ def _nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
     # Adding a name scope ensures logical grouping of the layers in the graph.
     with tf.name_scope(layer_name):
         with tf.name_scope('weights'):
-            weights = _weight_variable([input_dim, output_dim])
+            weights = _weight_variable_with_decay([input_dim, output_dim], wd=NN_WEIGHT_DECAY)
         with tf.name_scope('biases'):
             biases = _bias_variable([output_dim])
         with tf.name_scope('Wx_plus_b'):
@@ -62,8 +86,8 @@ def _conv_layer(input_tensor,
     # Adding a name scope ensures logical grouping of the layers in the graph.
     with tf.name_scope(layer_name):
         with tf.name_scope('weights'):
-            weights = _weight_variable(
-                [psize, psize, in_channels, out_channels])
+            weights = _weight_variable_with_decay(
+                [psize, psize, in_channels, out_channels], wd=CONV_WEIGHT_DECAY)
         with tf.name_scope('biases'):
             biases = _bias_variable([out_channels])
         with tf.name_scope('Wx_plus_b'):
@@ -162,6 +186,8 @@ def loss(logits, labels):
             name='cross_entropy')
         #tf.scalar_summary('loss', loss) # use avg_loss & ema_loss instead of just the most recent mini-batch only
         tf.add_to_collection('losses', cross_entropy_mean)
+
+        # The total loss is cross_entropy loss + all of weight decay terms (L2 loss)
         return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
 
@@ -175,7 +201,7 @@ def avg_loss():
 def _add_loss_summaries(total_loss):
     with tf.name_scope('Loss'):
         # compute the exponential moving average of all average losses
-        ema_loss = tf.train.ExponentialMovingAverage(0.9, name='ema_loss')
+        ema_loss = tf.train.ExponentialMovingAverage(LOSS_MOVING_AVERAGE_DECAY, name='ema_loss')
         losses = tf.get_collection('losses')
         ema_loss_op = ema_loss.apply(losses + [total_loss])
         for l in losses + [total_loss]:
@@ -190,8 +216,20 @@ def training(total_loss, learning_rate, global_step):
     with tf.name_scope('Optimizer'):
         with tf.control_dependencies([ema_loss_op]):
             optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-            train_op = optimizer.minimize(
-                total_loss, global_step=global_step, name='train_op')
+            #train_op = optimizer.minimize(
+            #    total_loss, global_step=global_step, name='train_op')
 
-            # TODO: Track the moving averages of all trainable variables.    
-            return train_op
+            # optimizer.minimize (loss, var_list)
+            #  ==
+            # (1) grads_and_vars = optimizer.compute_gradients(loss, var_list)
+            # (2) process grads if needed
+            # (3) optimizer.apply_gradients(grads_and_vars, global_step)
+            grads_and_vars = optimizer.compute_gradients(total_loss)
+
+        apply_gradient_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
+        # Track the moving averages of all trainable variables.
+        variables_averages = tf.train.ExponentialMovingAverage(VARIABLE_MOVING_AVERAGE_DECAY, global_step)
+        variables_averages_op = variables_averages.apply(tf.trainable_variables())
+        train_op = tf.group(apply_gradient_op, variables_averages_op)
+
+        return train_op

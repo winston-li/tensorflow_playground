@@ -59,8 +59,8 @@ IMAGE_WIDTH = 101
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
-#   GS (i.e. Go Straight)
 #   TL (i.e. Turn Left)
+#   GS (i.e. Go Straight)
 #   TR (i.e. Turn Right)
 # where each line corresponds to a label. We map each label contained in
 # the file to an integer corresponding to the line number starting from 0.
@@ -293,8 +293,8 @@ def _find_image_files(data_dir, labels_file):
     labels_file: string, path to the labels file.
       The list of valid labels are held in this file. Assumes that the file
       contains entries as such:
-        GS
         TL
+        GS        
         TR
       where each line corresponds to a label. We map each label contained in
       the file to an integer starting with the integer 0 corresponding to the
@@ -382,7 +382,7 @@ def run():
         'Please make the num_threads commensurate with test_shards')
     print('Saving results to %s' % data_dir)
 
-    labels_file = os.path.join(data_dir, LABELS_FILE)
+    labels_file = os.path.join(os.getcwd(), LABELS_FILE)
     print('labels_file = %s' % labels_file)
 
     for i in ['validation', 'train', 'test']:
