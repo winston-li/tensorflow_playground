@@ -181,6 +181,10 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
         $ sudo sh cuda_9.0.176.3_linux-run
         $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/4/cuda_9.0.176.4_linux-run
         $ sudo sh cuda_9.0.176.4_linux-run
+        $ sudo bash -c "echo /usr/local/cuda-9.0/lib64/ > /etc/ld.so.conf.d/cuda.conf"
+        $ sudo ldconfig
+        $ echo "export PATH=\"/usr/local/cuda-9.0/bin:\$PATH\"" >> ~/.bashrc
+        $ source ~/.bashrc
 
         (CUDA 9.1)
         $ wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda_9.1.85_387.26_linux
