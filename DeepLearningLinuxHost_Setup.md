@@ -169,7 +169,7 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
 
         There is a **STRONG version compatibility requirement** for TensorFlow w/ GPU to work. As of this writing, the latest version of TensorFlow (v1.10.0) needs CUDA 9 & cuDNN 7.
         ```
-        # Just write down various versions of CUDA download URLs, for TensorFlow 1.10.0, please assure installing CUDA 9.0!
+        # Just write down various versions of CUDA download URLs, for TensorFlow 1.10.1, please assure installing CUDA 9.0!
         (CUDA 9.0)
         $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda_9.0.176_384.81_linux-run
         $ sudo sh cuda_9.0.176_384.81_linux-run
@@ -177,7 +177,7 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
         $ sudo sh cuda_9.0.176.1_linux-run
         $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/2/cuda_9.0.176.2_linux-run
         $ sudo sh cuda_9.0.176.2_linux-run
-        $ https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/3/cuda_9.0.176.3_linux-run
+        $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/3/cuda_9.0.176.3_linux-run
         $ sudo sh cuda_9.0.176.3_linux-run
         $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/4/cuda_9.0.176.4_linux-run
         $ sudo sh cuda_9.0.176.4_linux-run
@@ -247,7 +247,7 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
 
         Under Python Virtual Environment
         ```
-        $ pip install --upgrade tensorflow-gpu=1.10
+        $ pip install --upgrade tensorflow-gpu==1.10.1
         # verify the install
         $ python -c "import tensorflow as tf; print(tf.__version__)"
         ```
