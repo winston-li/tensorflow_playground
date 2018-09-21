@@ -127,6 +127,8 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
     ```
 
 * Install PyTorch
+
+    Under Python Virtual Environment
     ```
     (CUDA 9.2, nVidia driver version > 390)
   	$ pip install http://download.pytorch.org/whl/cu92/torch-0.4.1-cp36-cp36m-linux_x86_64.whl
@@ -134,6 +136,8 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
 	OR
     (CUDA 9.0, nVidia driver version 390)
 	$ pip install torch torchvision
+    # verify the install
+    $ python -c "import torch; print(torch.__version)__"
 
     $ pip install -r requirements.txt
     ```
@@ -161,8 +165,23 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
 * Install TensorFlow
     * Install CUDA Toolkit
 
-        Do NOT go with CUDA installer package, use local run file instead
+        Do NOT go with CUDA installer package, use local run file instead.
+
+        There is a **STRONG version compatibility requirement** for TensorFlow w/ GPU to work. As of this writing, the latest version of TensorFlow (v1.10.0) needs CUDA 9 & cuDNN 7.
         ```
+        # Just write down various versions of CUDA download URLs, for TensorFlow 1.10.0, please assure installing CUDA 9.0!
+        (CUDA 9.0)
+        $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda_9.0.176_384.81_linux-run
+        $ sudo sh cuda_9.0.176_384.81_linux-run
+        $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/1/cuda_9.0.176.1_linux-run
+        $ sudo sh cuda_9.0.176.1_linux-run
+        $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/2/cuda_9.0.176.2_linux-run
+        $ sudo sh cuda_9.0.176.2_linux-run
+        $ https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/3/cuda_9.0.176.3_linux-run
+        $ sudo sh cuda_9.0.176.3_linux-run
+        $ wget https://developer.nvidia.com/compute/cuda/9.0/Prod/patches/4/cuda_9.0.176.4_linux-run
+        $ sudo sh cuda_9.0.176.4_linux-run
+
         (CUDA 9.1)
         $ wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda_9.1.85_387.26_linux
         $ sudo sh cuda_9.1.85_387.26_linux
@@ -192,7 +211,8 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
         * Note:
             * Choose NOT to install nVidia driver while installing CUDA Toolkit (asked while executing runfile)
             * You might check CUDA version via 'nvcc --version' or 'cat /usr/local/cuda/version.txt'
-            * https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu-installation
+            * You might uninstall CUDA via '$ sudo /usr/local/cuda-X.Y/bin/uninstall_cuda_X.Y.pl'
+            * Details refer to https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
 
     * Install cuDNN
@@ -200,9 +220,9 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
         (cuDNN v7.3.0 for CUDA 9.0)
         # You need to register as a nVidia developer to download cuDNN, here I use Dropbox links for my own convenient use.
         # Download runtime library, developer library, code samples and user guide from Dropbox
-        wget https://www.dropbox.com/s/wm9edhf5oomkyqe/libcudnn7_7.3.0.29-1%2Bcuda9.0_amd64.deb?dl=0
-        wget https://www.dropbox.com/s/f9hskg26vkqzw0c/libcudnn7-dev_7.3.0.29-1%2Bcuda9.0_amd64.deb?dl=0
-        wget https://www.dropbox.com/s/4gc8h5c7diq2nl0/libcudnn7-doc_7.3.0.29-1%2Bcuda9.0_amd64.deb?dl=0
+        $ wget https://www.dropbox.com/s/wm9edhf5oomkyqe/libcudnn7_7.3.0.29-1%2Bcuda9.0_amd64.deb
+        $ wget https://www.dropbox.com/s/f9hskg26vkqzw0c/libcudnn7-dev_7.3.0.29-1%2Bcuda9.0_amd64.deb
+        $ wget https://www.dropbox.com/s/4gc8h5c7diq2nl0/libcudnn7-doc_7.3.0.29-1%2Bcuda9.0_amd64.deb
 
         # runtime library
         $ sudo dpkg -i libcudnn7_7.3.0.29-1+cuda9.0_amd64.deb
@@ -216,7 +236,18 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
         $ cd  $HOME/cudnn_samples_v7/mnistCUDNN
         $ make clean && make
         $ ./mnistCUDNN
+            ...
             Test passed!
         ```
         * Note:
+            * You might check cuDNN version via 'cat /usr/include/x86_64-linux-gnu/cudnn_v*.h | grep CUDNN_MAJOR -A 2'
             * https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html
+
+    * Install TensorFlow with GPU
+
+        Under Python Virtual Environment
+        ```
+        $ pip install --upgrade tensorflow-gpu=1.10
+        # verify the install
+        $ python -c "import tensorflow as tf; print(tf.__version__)"
+        ```
