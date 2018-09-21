@@ -1,6 +1,6 @@
 ## Setup Environment
 
-For best compatibility, CLI commands are recommanded through `ssh`, instead of GUI. 
+For best compatibility, CLI commands are recommanded through `ssh`, instead of GUI.
 
 ### Step 1: Ubuntu 16.04
 
@@ -15,7 +15,7 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
     ```
     * Note:
 
-        You might meet version issues while installing some packages if not performed apt-get update & upgrade first. 
+        You might meet version issues while installing some packages if not performed apt-get update & upgrade first.
         To resolve that specific version issue, you might resolve it via specifying its dependence, for example,
         ```
         $ sudo apt-get install -y openssh-server (FAILED!)
@@ -50,7 +50,7 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
     $ sudo service lightdm stop
     ```
 
-* Install Ubuntu NVidia driver 
+* Install Ubuntu NVidia driver
     ```
     $ sudo add-apt-repository ppa:graphics-drivers/ppa
     $ sudo apt-get update
@@ -59,11 +59,11 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
     ```
     * Note:
 
-        * It's not recommended to download and install nvidia driver directly from https://www.nvidia.com/Download/index.aspx, still suffer from it from time to time...  
+        * It's not recommended to download and install nvidia driver directly from https://www.nvidia.com/Download/index.aspx, still suffer from it from time to time...
         * There is compatibility issue of nVidia 396 dirver and 1080Ti GPU, which causes looping X-Window login screen.
         * For accessing GCE or Azure VM without GUI, it's OK to install nvidia-396 driver (nvidia 390 driver is not applicable to CUDA 9.2)
         * You might check nvidia driver via 'nvidia-smi' or 'cat /proc/driver/nvidia/version'
-        * To remove existing nvidia driver & cuda, try 'sudo apt-get purge nvidia*', then perform aforemnetioned steps to install needed driver again. 
+        * To remove existing nvidia driver & cuda, try 'sudo apt-get purge nvidia*', then perform aforemnetioned steps to install needed driver again.
 
 ### Step 3: Install Docker & NVidia runtime
 
@@ -117,25 +117,27 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
         eval "$(pyenv init -)"
         eval "$(pyenv virtualenv-init -)"
 
-    # following packages used while installing python 3.6.5 
-    $ sudo apt-get install zlib1g-dev libbz2-dev libreadline-dev libssl-dev libsqlite3-dev 
+    $ source ~/.bashrc
+
+    # following packages used while installing python 3.6.5
+    $ sudo apt-get install zlib1g-dev libbz2-dev libreadline-dev libssl-dev libsqlite3-dev
     $ pyenv install 3.6.5
   	$ pyenv virtualenv 3.6.5 pytorch-p365
-  	$ pyenv activate pytorch-p365 
+  	$ pyenv activate pytorch-p365
     ```
 
-* Install PyTorch 
+* Install PyTorch
     ```
     (CUDA 9.2, nVidia driver version > 390)
-  	$ pip install http://download.pytorch.org/whl/cu92/torch-0.4.1-cp36-cp36m-linux_x86_64.whl 
+  	$ pip install http://download.pytorch.org/whl/cu92/torch-0.4.1-cp36-cp36m-linux_x86_64.whl
   	$ pip install torchvision
-	OR 
+	OR
     (CUDA 9.0, nVidia driver version 390)
 	$ pip install torch torchvision
-    
+
     $ pip install -r requirements.txt
     ```
-    * Note: 
+    * Note:
         * An example of <b>requirements.txt</b>
             ```
             numpy >= 1.14
@@ -163,34 +165,58 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
         ```
         (CUDA 9.1)
         $ wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda_9.1.85_387.26_linux
-        $ sudo sh cuda_9.1.85_387.26_linux.run
+        $ sudo sh cuda_9.1.85_387.26_linux
         $ wget https://developer.nvidia.com/compute/cuda/9.1/Prod/patches/1/cuda_9.1.85.1_linux
-        $ sudo sh cuda_9.1.85.1_linux.run
+        $ sudo sh cuda_9.1.85.1_linux
         $ wget https://developer.nvidia.com/compute/cuda/9.1/Prod/patches/2/cuda_9.1.85.2_linux
-        $ sudo sh cuda_9.1.85.2_linux.run
+        $ sudo sh cuda_9.1.85.2_linux
         $ wget https://developer.nvidia.com/compute/cuda/9.1/Prod/patches/3/cuda_9.1.85.3_linux
-        $ sudo sh cuda_9.1.85.3_linux.run 
+        $ sudo sh cuda_9.1.85.3_linux
         $ sudo bash -c "echo /usr/local/cuda-9.1/lib64/ > /etc/ld.so.conf.d/cuda.conf"
         $ sudo ldconfig
         $ echo "export PATH=\"/usr/local/cuda-9.1/bin:\$PATH\"" >> ~/.bashrc
+        $ source ~/.bashrc
 
-        OR 
+        OR
 
         (CUDA 9.2)
         $ wget https://developer.nvidia.com/compute/cuda/9.2/Prod2/local_installers/cuda_9.2.148_396.37_linux
-        $ sudo sh cuda_9.2.148_396.37_linux.run
+        $ sudo sh cuda_9.2.148_396.37_linux
         $ wget https://developer.nvidia.com/compute/cuda/9.2/Prod2/patches/1/cuda_9.2.148.1_linux
-        $ sudo sh cuda_9.2.148.1_linux.run
+        $ sudo sh cuda_9.2.148.1_linux
         $ sudo bash -c "echo /usr/local/cuda-9.2/lib64/ > /etc/ld.so.conf.d/cuda.conf"
         $ sudo ldconfig
-        $ echo "export PATH=\"/usr/local/cuda-9.2/bin:\$PATH\"" >> ~/.bashrc   
+        $ echo "export PATH=\"/usr/local/cuda-9.2/bin:\$PATH\"" >> ~/.bashrc
+        $ source ~/.bashrc
         ```
         * Note:
             * Choose NOT to install nVidia driver while installing CUDA Toolkit (asked while executing runfile)
+            * You might check CUDA version via 'nvcc --version' or 'cat /usr/local/cuda/version.txt'
             * https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu-installation
 
 
-    * Install CuDNN
+    * Install cuDNN
+        ```
+        (cuDNN v7.3.0 for CUDA 9.0)
+        # You need to register as a nVidia developer to download cuDNN, here I use Dropbox links for my own convenient use.
+        # Download runtime library, developer library, code samples and user guide from Dropbox
+        wget https://www.dropbox.com/s/wm9edhf5oomkyqe/libcudnn7_7.3.0.29-1%2Bcuda9.0_amd64.deb?dl=0
+        wget https://www.dropbox.com/s/f9hskg26vkqzw0c/libcudnn7-dev_7.3.0.29-1%2Bcuda9.0_amd64.deb?dl=0
+        wget https://www.dropbox.com/s/4gc8h5c7diq2nl0/libcudnn7-doc_7.3.0.29-1%2Bcuda9.0_amd64.deb?dl=0
 
-        TO BE ADDED
-    
+        # runtime library
+        $ sudo dpkg -i libcudnn7_7.3.0.29-1+cuda9.0_amd64.deb
+        # developer library
+        $ sudo dpkg -i libcudnn7-dev_7.3.0.29-1+cuda9.0_amd64.deb
+        # code samples and user guide
+        $ sudo dpkg -i libcudnn7-doc_7.3.0.29-1+cuda9.0_amd64.deb
+
+        # Verifying cuDNN via accompanying example in debian installation package
+        $ cp -r /usr/src/cudnn_samples_v7/ $HOME
+        $ cd  $HOME/cudnn_samples_v7/mnistCUDNN
+        $ make clean && make
+        $ ./mnistCUDNN
+            Test passed!
+        ```
+        * Note:
+            * https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html
