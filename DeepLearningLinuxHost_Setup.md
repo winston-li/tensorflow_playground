@@ -103,7 +103,7 @@ Refer [Ubuntu Site](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubunt
 
 * Validate runtime environment
     ```
-    $ docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi
+    $ docker run --runtime=nvidia --rm nvidia/cuda:9.0-runtime-centos6 nvidia-smi
     ```
 
 ### Step 4: Setup host level environment (Optional)
